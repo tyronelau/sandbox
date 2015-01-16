@@ -37,6 +37,8 @@ int main() {
   thread t2(bar, ref(a), ref(b));
   t1.join();
   t2.join();
+  
+  cout << "I'm done??" << endl;
   return 0;
 }
 
