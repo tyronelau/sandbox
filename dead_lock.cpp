@@ -39,6 +39,8 @@ int main() {
   t2.join();
   
   cout << "I'm done??" << endl;
+  cout << "Never run here" << endl;
+
   return 0;
 }
 
