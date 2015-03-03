@@ -3,6 +3,8 @@
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <cerrno>
 #include <cstring>
@@ -23,7 +25,9 @@ int main() {
     return -1;
   }
 
-  int len = 512 * 1024;
+  fcntl(h, F_SETFL, O_NONBLOCK);
+
+  int len = 2 * 1024 * 1024;
   setsockopt(h, SOL_SOCKET, SO_SNDBUF, &len, sizeof(len));
   while (true) {
     char buf[64];
@@ -31,7 +35,7 @@ int main() {
     sockaddr_in remote;
     remote.sin_port = htons(6000);
     remote.sin_family = AF_INET;
-    remote.sin_addr.s_addr = inet_addr("192.168.99.254");
+    remote.sin_addr.s_addr = inet_addr("192.168.99.1");
 
     int failed = 0;
     int success = 0;
@@ -44,15 +48,33 @@ int main() {
     for (int i = 0; i < 1000000; ++i) {
       ssize_t len = sendto(h, buf, 64, 0, reinterpret_cast<sockaddr *>(&remote),
           sizeof(remote));
-      if (len != 64)
-        ++failed;
-      else
+      if (len == 64)
         ++success;
+      else if (len == -1) {
+        int error = errno;
+        if (error == EAGAIN || error == EWOULDBLOCK) {
+          fd_set fds;
+          FD_ZERO(&fds);
+          FD_SET(h, &fds);
+          int ret = select(h + 1, NULL, &fds, NULL, NULL);
+          if (ret == 1)
+            continue;
+          else
+            break;
+        }
+
+      // if (len != 64)
+      //   ++failed;
+      // else
+      //   ++success;
+    } else
+      break;
     }
 
     gettimeofday(&t, &tz);
     double end = t.tv_sec * 1e6 + t.tv_usec;
     cout << "Speed " << success / (end - start) * 1e6 << endl;
+    cout << "Failed " << failed / (end - start) * 1e6 << endl;
   }
 
   return 0;
