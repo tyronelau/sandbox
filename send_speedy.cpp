@@ -17,7 +17,7 @@ int main() {
   sockaddr_in addr;
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(8000);
+  addr.sin_port = htons(8888);
 
   if (0 != bind(h, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr))) {
     cout << "bind failed: " << strerror(errno);
@@ -33,9 +33,9 @@ int main() {
     char buf[64];
 
     sockaddr_in remote;
-    remote.sin_port = htons(6000);
+    remote.sin_port = htons(6666);
     remote.sin_family = AF_INET;
-    remote.sin_addr.s_addr = inet_addr("192.168.99.1");
+    remote.sin_addr.s_addr = inet_addr("221.228.202.122");
 
     int failed = 0;
     int success = 0;
