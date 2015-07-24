@@ -6,7 +6,7 @@ BUILD_PATH := build
 DEP_PATH := $(BUILD_PATH)/.deps
 OBJ_PATH := $(BUILD_PATH)/.objs
 BIN_PATH := $(BUILD_PATH)/lib
-SOURCES = backtrace.cpp dllmain.cpp CityHash.cpp guard_thread.cpp
+SOURCES = backtrace.cpp dllmain.cpp CityHash.cpp guard_thread.cpp callstack_linux.cpp
 
 .SECONDEXPANSION:
 .PHONY: all pre clean

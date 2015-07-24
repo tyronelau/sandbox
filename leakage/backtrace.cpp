@@ -4,6 +4,9 @@
 
 #include <dlfcn.h>
 
+#include <pthread.h>
+#include <unistd.h>
+
 #include <cstdarg>
 #include <cstdio>
 #include <cstdint>
@@ -12,45 +15,9 @@
 #include <string>
 #include <unordered_map>
 
-#define UNW_LOCAL_ONLY
-#include <libunwind.h>
-
 #include "allocator.h"
 #include "CityHash.h"
-
-enum {kMaxTraceCount = 20};
-
-struct address_info {
-  unw_word_t handle;
-  unw_word_t offset;
-};
-
-struct callstack_detail {
-  unw_word_t callid;
-  address_info addresses[kMaxTraceCount];
-};
-
-struct callstack {
-  uint32_t alloc_size;
-  uint32_t count;
-  unw_word_t stacks[kMaxTraceCount];
-
-  const char* begin() const {
-    return reinterpret_cast<const char*>(this);
-  }
-
-  size_t size() const {
-    const char *end = reinterpret_cast<const char*>(&stacks[count]);
-    return static_cast<size_t>(end - begin());
-  }
-};
-
-inline bool operator==(const callstack &a, const callstack &b) {
-  if (a.count != b.count)
-    return false;
-
-  return !memcmp(a.begin(), b.begin(), a.size());
-}
+#include "callstack_info.h"
 
 struct callstack_hasher {
   size_t operator()(const callstack &bt) const {
@@ -68,9 +35,9 @@ typedef std::unordered_map<callid_t, uint32_t, std::hash<callid_t>,
     std::equal_to<callid_t>,
     native_allocator<std::pair<const callid_t, uint32_t> > > memusage_map_t;
 
-typedef std::pair<const unw_word_t, callid_t> malloc_record_t;
-typedef std::unordered_map<unw_word_t, callid_t, std::hash<unw_word_t>,
-    std::equal_to<unw_word_t>, native_allocator<malloc_record_t> > mem_map_t;
+typedef std::pair<const pointer_type_t, callid_t> malloc_record_t;
+typedef std::unordered_map<pointer_type_t, callid_t, std::hash<pointer_type_t>,
+    std::equal_to<pointer_type_t>, native_allocator<malloc_record_t> > mem_map_t;
 
 typedef std::basic_string<char, std::char_traits<char>,
     native_allocator<char> > native_string_t; 
@@ -81,8 +48,8 @@ struct sopath_hasher {
   }
 };
 
-typedef std::pair<const native_string_t, unw_word_t> so_item_t;
-typedef std::unordered_map<native_string_t, unw_word_t, sopath_hasher,
+typedef std::pair<const native_string_t, pointer_type_t> so_item_t;
+typedef std::unordered_map<native_string_t, pointer_type_t, sopath_hasher,
     std::equal_to<native_string_t>, native_allocator<so_item_t> > so_db_t;
 
 static std::mutex g_backtrace_lock;
@@ -110,27 +77,6 @@ static void init_backtrace() {
   g_init = true;
 }
 
-static void get_callstack(size_t n, callstack *pbt) {
-  callstack &bt = *pbt;
-  unw_cursor_t cursor;
-  unw_context_t uc;
-  unw_word_t ip, sp;
-
-  unw_getcontext(&uc);
-  unw_init_local(&cursor, &uc);
-
-  bt.count = 0;
-  bt.alloc_size = n;
-
-  while (unw_step(&cursor) > 0 && bt.count < kMaxTraceCount) {
-    unw_get_reg(&cursor, UNW_REG_IP, &ip);
-    unw_get_reg(&cursor, UNW_REG_SP, &sp);
-
-    bt.stacks[bt.count++] = ip;
-    (void)sp;
-  }
-}
-
 static int simple_snprintf(char *p, int len, const char *fmt, ...);
 
 static callstack_detail create_callstack_info(const callstack &bt) {
@@ -156,7 +102,7 @@ static callstack_detail create_callstack_info(const callstack &bt) {
 
     auto &frame = detail.addresses[i];
     frame.handle = (*g_so_db)[sopath];
-    frame.offset = bt.stacks[i] - (unw_word_t)info.dli_fbase;
+    frame.offset = bt.stacks[i] - (pointer_type_t)info.dli_fbase;
   }
 
   return detail;
@@ -184,14 +130,14 @@ void dump_backtrace(void *p, size_t n) {
   }
 
   ++((*g_memusage_db)[callid]);
-  (*g_malloc_db)[reinterpret_cast<unw_word_t>(p)] = callid;
+  (*g_malloc_db)[reinterpret_cast<pointer_type_t>(p)] = callid;
 }
 
 void record_free(void *p) {
   std::lock_guard<std::mutex> lock(g_backtrace_lock);
   if (!g_init)
     return;
-  auto it = g_malloc_db->find(reinterpret_cast<unw_word_t>(p));
+  auto it = g_malloc_db->find(reinterpret_cast<pointer_type_t>(p));
   if (it == g_malloc_db->end())
     return;
 
@@ -204,7 +150,7 @@ void record_free(void *p) {
   }
 }
 
-static inline int format_hex_word(char *p, unw_word_t pc) {
+static inline int format_hex_word(char *p, pointer_type_t pc) {
   char buf[32];
   int i = 0;
   const static char hex[] = {
@@ -293,7 +239,7 @@ static int simple_snprintf(char *p, int len, const char *fmt, ...) {
         break;
       }
       case 'x': {
-        unw_word_t val = va_arg(va, unw_word_t);
+        pointer_type_t val = va_arg(va, pointer_type_t);
         int n = format_hex_word(p + i, val);
         i += n;
         r -= n;
