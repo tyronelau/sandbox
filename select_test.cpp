@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -17,6 +18,28 @@ int main(int argc, char *argv[]) {
     cout << "usage: "<< argv[0] << " ip port" << endl;
     return -1;
   }
+
+  void *p = malloc(120);
+  cout << "allocated: " << p << endl;
+
+  for (int i = 0; i < 10; ++i) {
+    size_t n = 0;
+    if (i % 3 == 0) {
+      n = 120;
+    } else {
+      n = 200;
+    }
+    void *q = malloc(n);
+  }
+  free(p);
+
+  std::vector<int> *pv = new std::vector<int>(100);
+  // void *qq = malloc(200);
+  // void *rr = malloc(120);
+
+  // p = realloc(p, 300);
+  // cout << "realloced: " << p << endl;
+  // free(p);
 
   in_addr_t ip = inet_addr(argv[1]);
   unsigned short port = htons(atoi(argv[2]));
@@ -55,44 +78,48 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  fd_set rds;
-  fd_set wds;
-  fd_set eds;
-  FD_ZERO(&rds);
-  FD_ZERO(&wds);
-  FD_ZERO(&eds);
-  FD_SET(fd, &rds);
-  FD_SET(fd, &wds);
+  while (true) {
+    fd_set rds;
+    fd_set wds;
+    fd_set eds;
+    FD_ZERO(&rds);
+    FD_ZERO(&wds);
+    FD_ZERO(&eds);
+    FD_SET(fd, &rds);
+    FD_SET(fd, &wds);
 
-  ret = select(fd + 1, &rds, &wds, &eds, NULL);
-  if (ret == 0) {
-    cerr << "unknown issue: " << endl;
-    return -1;
-  }
-
-  if (ret > 0) {
-    if (FD_ISSET(fd, &rds))
-      cout << "readable\n";
-    if (FD_ISSET(fd, &wds)) {
-      cout << "writable\n";
-      long opt = 0;
-      socklen_t len = sizeof(opt);
-      int s = getsockopt(fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<void *>(&opt), &len);
-      assert(s == 0);
-      cout << "len: " << len << endl;
-      if (opt) {
-        cout << "Connection error, error code: " << opt << endl;
-        return -1;
-      } else {
-        cout << "Connection success!" << endl;
-        return -1;
-      }
+    ret = select(fd + 1, &rds, &wds, &eds, NULL);
+    if (ret == 0) {
+      cerr << "unknown issue: " << endl;
+      return -1;
     }
 
-    if (FD_ISSET(fd, &eds))
-      cout << "error\n";
-  } else {
-    cout << "unknown ret: " << ret << endl;
+    if (ret > 0) {
+      if (FD_ISSET(fd, &rds))
+        cout << "readable\n";
+      if (FD_ISSET(fd, &wds)) {
+        cout << "writable\n";
+        long opt = 0;
+        socklen_t len = sizeof(opt);
+        int s = getsockopt(fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<void *>(&opt), &len);
+        assert(s == 0);
+        cout << "len: " << len << endl;
+        if (opt) {
+          cout << "Connection error, error code: " << opt << endl;
+          return -1;
+        } else {
+          cout << "Connection success!" << endl;
+          return -1;
+        }
+      }
+
+      if (FD_ISSET(fd, &eds)) {
+        cout << "error\n";
+      }
+      break;
+    } else {
+      cout << "unknown ret: " << ret << ", " << errno << endl;
+    }
   }
 
   return 0;

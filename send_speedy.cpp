@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cstring>
 #include <iostream>
+#include <gperftools/profiler.h>
 
 using namespace std;
 
@@ -29,7 +30,9 @@ int main() {
 
   int len = 2 * 1024 * 1024;
   setsockopt(h, SOL_SOCKET, SO_SNDBUF, &len, sizeof(len));
-  while (true) {
+  ProfilerStart("./a.prof");
+  int i = 0;
+  while (i++ < 10) {
     char buf[64];
 
     sockaddr_in remote;
@@ -77,6 +80,7 @@ int main() {
     cout << "Failed " << failed / (end - start) * 1e6 << endl;
   }
 
+  ProfilerStop();
   return 0;
 }
 
