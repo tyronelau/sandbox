@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <malloc.h>
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
@@ -20,20 +21,29 @@ int main(int argc, char *argv[]) {
   }
 
   void *p = malloc(120);
-  cout << "allocated: " << p << endl;
+  void *q = realloc(p, 200);
+  void *r = realloc(q, 50);
+  void *ss = realloc(r, 0);
 
-  for (int i = 0; i < 10; ++i) {
-    size_t n = 0;
-    if (i % 3 == 0) {
-      n = 120;
-    } else {
-      n = 200;
-    }
-    void *q = malloc(n);
-  }
-  free(p);
+  posix_memalign(&p, 4096, 4096);
+  memalign(4096, 8192);
+  valloc(8192);
 
-  std::vector<int> *pv = new std::vector<int>(100);
+  // void *p = malloc(120);
+  // cout << "allocated: " << p << endl;
+
+  // for (int i = 0; i < 10; ++i) {
+  //   size_t n = 0;
+  //   if (i % 3 == 0) {
+  //     n = 120;
+  //   } else {
+  //     n = 200;
+  //   }
+  //   void *q = malloc(n);
+  // }
+  // free(p);
+
+  // std::vector<int> *pv = new std::vector<int>(100);
   // void *qq = malloc(200);
   // void *rr = malloc(120);
 

@@ -36,7 +36,8 @@ struct native_allocator {
 
   void deallocate(pointer p, size_type n) {
     (void)n;
-    g_real_free(p);
+    if (g_real_free)
+      g_real_free(p);
   }
 
   size_type max_size() const noexcept {
