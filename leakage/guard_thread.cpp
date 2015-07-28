@@ -1,6 +1,9 @@
 #include "guard_thread.h"
 #include <unistd.h>
 #include <csignal>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 void dump_memory_snapshot();
 
@@ -16,7 +19,11 @@ guard_thread::~guard_thread() {
 
 void guard_thread::sigusr_handler(int signo) {
   (void)signo;
-  g_dump_memory = true;
+  g_dump_memory.store(true);
+  int fd = open("/data/data/tmp/b.log", O_CREAT | O_WRONLY);
+  char buf[] = "in signal";
+  write(fd, buf, sizeof(buf) - 1);
+  close(fd);
 }
 
 bool guard_thread::create_and_run() {
@@ -27,6 +34,7 @@ bool guard_thread::create_and_run() {
     return false;
 
   signal(SIGUSR1, sigusr_handler);
+  signal(SIGUSR2, sigusr_handler);
   g_thread_inited = true;
 
   return true;
@@ -48,7 +56,7 @@ void* guard_thread::dump_thread(void *arg) {
   (void)arg;
   while (true) {
     sleep(1);
-    if (g_dump_memory) {
+    if (g_dump_memory.load()) {
       g_dump_memory = false;
       dump_memory_snapshot();
     }

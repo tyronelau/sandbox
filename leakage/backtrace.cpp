@@ -1,6 +1,9 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include <dlfcn.h>
 
@@ -11,13 +14,17 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
-#include <mutex>
+// #include <mutex>
 #include <string>
 #include <unordered_map>
 
+#include "my_mutex.h"
 #include "allocator.h"
 #include "CityHash.h"
 #include "callstack_info.h"
+
+typedef my_mutex mutex_t;
+typedef my_lock_guard<my_mutex> lock_guard_t;
 
 struct callstack_hasher {
   size_t operator()(const callstack &bt) const {
@@ -52,7 +59,7 @@ typedef std::pair<const native_string_t, pointer_type_t> so_item_t;
 typedef std::unordered_map<native_string_t, pointer_type_t, sopath_hasher,
     std::equal_to<native_string_t>, native_allocator<so_item_t> > so_db_t;
 
-static std::mutex g_backtrace_lock;
+static mutex_t g_backtrace_lock;
 static bool g_init = false;
 static uint32_t g_next_callid = 0;
 
@@ -67,6 +74,10 @@ static so_db_t *g_so_db;
 static callstack_map_t *g_callstack_db;
 static memusage_map_t *g_memusage_db;
 static mem_map_t *g_malloc_db;
+
+void* operator new(size_t size) {
+  return malloc(size);
+}
 
 static void init_backtrace() {
   g_so_db = ::new (g_library_db_buf) so_db_t();
@@ -115,7 +126,7 @@ void dump_backtrace(void *p, size_t n) {
   if (bt.count == 0)
     return;
 
-  std::lock_guard<std::mutex> lock(g_backtrace_lock);
+  lock_guard_t lock(g_backtrace_lock);
   if (!g_init) {
     init_backtrace();
   }
@@ -134,7 +145,7 @@ void dump_backtrace(void *p, size_t n) {
 }
 
 void record_free(void *p) {
-  std::lock_guard<std::mutex> lock(g_backtrace_lock);
+  lock_guard_t lock(g_backtrace_lock);
   if (!g_init)
     return;
   auto it = g_malloc_db->find(reinterpret_cast<pointer_type_t>(p));
@@ -275,8 +286,8 @@ static int simple_snprintf(char *p, int len, const char *fmt, ...) {
 static char* dump_single_callstack(char *p, int buf_size, int count,
     int alloc_size, int stack_depth, const callstack &bt,
     const callstack_detail &detail) {
-  int n = simple_snprintf(p, buf_size, "Allocated %d bytes in %d calls\n",
-      alloc_size * count, count);
+  int n = simple_snprintf(p, buf_size, "Allocated %d bytes in %d calls: %d\n",
+      alloc_size * count, count, int(detail.callid));
   if (buf_size < n + 512)
     return p;
 
@@ -294,7 +305,7 @@ static char* dump_single_callstack(char *p, int buf_size, int count,
   return p;
 }
 
-static void dump_so_paths() {
+static void dump_so_paths(int fd) {
   enum {kMinSpace = 512, kBufSize = 8000};
   char buf[kBufSize];
   int n = 0;
@@ -302,7 +313,7 @@ static void dump_so_paths() {
   const so_db_t &so_db = *g_so_db;
   for (const auto &so : so_db) {
     if (n > kBufSize - kMinSpace) {
-      write(2, buf, n);
+      write(fd, buf, n);
       n = 0;
     }
     int cnt = simple_snprintf(buf + n, kBufSize - n, "handle %d: %s\n", int(so.second),
@@ -312,34 +323,42 @@ static void dump_so_paths() {
 
   buf[n++] = '\n';
 
-  write(2, buf, n);
+  write(fd, buf, n);
 }
 
-static void dump_memory_prelogue() {
+static void dump_memory_prelogue(int fd) {
   char buf[] = "MEMORY SNAPSHOT IS DUMPPING\n";
-  write(2, buf, sizeof(buf));
+  write(fd, buf, sizeof(buf) - 1);
 }
 
-static void dump_memory_epilogue() {
+static void dump_memory_epilogue(int fd) {
   char buf[] = "MEMORY SNAPSHOT DUMPPING FINISHED\n";
-  write(2, buf, sizeof(buf));
+  write(fd, buf, sizeof(buf) - 1);
 }
 
 void dump_memory_snapshot() {
-  std::lock_guard<std::mutex> lock(g_backtrace_lock);
+  lock_guard_t lock(g_backtrace_lock);
   if (!g_init)
     return;
 
-  dump_memory_prelogue();
-  dump_so_paths();
+  int fd = open("/data/data/tmp/a.log", O_CREAT | O_APPEND | O_WRONLY);
+  if (fd == -1) {
+    char *p = 0;
+    *p = 0;
+    return;
+  }
+
+  dump_memory_prelogue(fd);
+  dump_so_paths(fd);
 
   const callstack_map_t &callstack_db = *g_callstack_db;
   const memusage_map_t &memusage_db = *g_memusage_db;
   const mem_map_t &malloc_db = *g_malloc_db;
 
-  enum {kCallstackSize = 512, kCacheSize = 8192};
+  enum {kCallstackSize = 1024, kCacheSize = 8192};
   char buf[kCacheSize];
   int n = 0;
+  int total = 0;
 
   for (const auto &bt : callstack_db) {
     const callstack &s = bt.first;
@@ -350,18 +369,23 @@ void dump_memory_snapshot() {
 
     uint32_t count = it->second;
     if (n > kCacheSize - kCallstackSize) {
-      write(2, buf, n);
+      write(fd, buf, n);
       n = 0;
     }
 
     char *pos = dump_single_callstack(buf + n, kCacheSize - n, count,
         s.alloc_size, s.count, s, bt.second);
     n = pos - buf;
+    // int k = simple_snprintf(buf, kCacheSize, "Allocated %d bytes in %d calls\n", count * s.alloc_size, count);
+    // write(fd, buf, k);
+    total += count * s.alloc_size;
   }
 
-  write(2, buf, n);
+  write(fd, buf, n);
 
-  dump_memory_epilogue();
-  fsync(2);
+  n = simple_snprintf(buf, kCacheSize, "Total allocated: %d\n", total);
+  write(fd, buf, n);
+  dump_memory_epilogue(fd);
+  close(fd);
 }
 

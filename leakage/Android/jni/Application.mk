@@ -1,4 +1,4 @@
-#NDK_TOOLCHAIN_VERSION = clang3.5
+#NDK_TOOLCHAIN_VERSION = clang3.4
 STLPORT_FORCE_REBUILD := false
 APP_STL := gnustl_static
 APP_CPPFLAGS += -fno-exceptions

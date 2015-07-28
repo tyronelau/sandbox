@@ -7,12 +7,23 @@
 
 typedef uintptr_t pointer_type_t; 
 
+#ifdef __arm__
+#define CALLID "u"
+#endif
+
 #elif defined(__linux__)
 
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
 typedef unw_word_t pointer_type_t;
+
+#ifdef __i386__
+#define CALLID "u"
+#elif defined __x86_64__ 
+#define CALLID "lu"
+#endif
+
 #endif
 
 enum {kMaxTraceCount = 20};
