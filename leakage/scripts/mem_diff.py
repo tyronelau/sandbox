@@ -2,12 +2,17 @@
 # -*- coding: utf-8 -*-
 import sys
 import re
+import os
 
 kInitState = 0 # initial state, waiting for prelogue
 kSoState = 1 # prelogue found, handling the shared libraries
 kBacktraceState = 2 # shared libraries processed, waiting for a complete bt
 kInCallstackState = 3 # handling callstacks
 kEndState = 4 # Memory dump over
+
+shared_libraries = {}
+
+source_db = {}
 
 class MemoryBlock(object):
   def __init__(self, callid, total, calls):
@@ -23,7 +28,7 @@ class Snapshot(object):
   def __init__(self, dmp_file):
     # self.dmp_file = dmp_file
     self.mem_db = {}
-    self.shared_libraries = {}
+    #self.shared_libraries = {}
     if dmp_file:
       self.loadFile(dmp_file)
 
@@ -32,6 +37,7 @@ class Snapshot(object):
     epilogue = "MEMORY SNAPSHOT DUMPPING FINISHED"
 
     state = kInitState
+    global shared_libraries
 
     fd = open(dmp_file)
     for line in fd:
@@ -46,7 +52,7 @@ class Snapshot(object):
         if m:
           handle = int(m.group(1))
           so_path = m.group(2)
-          self.shared_libraries[handle] = so_path
+          shared_libraries[handle] = so_path
         else: # so paths is over
           state = kBacktraceState
       elif state == kBacktraceState:
@@ -71,9 +77,54 @@ class Snapshot(object):
           self.cur_mem = None
           state = kBacktraceState
 
+def parseSourceInfo(abs_pc):
+  global source_db
+
+  gdb = "arm-linux-androideabi-gdb"
+  so_name = shared_libraries[abs_pc[0]]
+  gdb_command = "%s /home/tyrone/src/debug/minote/lib/%s --batch --eval-command \"info line *0x%s\"" %(gdb, so_name, abs_pc[1])
+  pattern = "Line\s+(\d+)\s*of\s*\"([^\"]*)\"\s*starts at address [^<]*<(.*)> and ends at"
+  fd = os.popen(gdb_command, "r")
+  for line in fd:
+    m = re.search(pattern, line)
+    if m:
+      lineno = m.group(1)
+      source = m.group(2)
+      symbol = m.group(3)
+      source_db[abs_pc] = (source, lineno, symbol)
+      return
+    pattern2 = "No line number information available for address [^<]*<([^\+]*)\+(\d+)>"
+    m = re.search(pattern2, line)
+    if m:
+      lineno = ""
+      source = ""
+      symbol = m.group(1)
+      offset = m.group(2)
+      symbol = os.popen("c++filt %s" %symbol, "r").read().strip()
+      source_db[abs_pc] = (source, lineno, symbol + "+" + offset)
+      return
+    pattern3 = "No line number information available for address"
+    m = re.search(pattern3, line)
+    if m:
+      source_db[abs_pc] = ("", "", "0x" + abs_pc[1])
+      return
+
+  print >>sys.stderr, "Error in handling: ", abs_pc, so_name
+
 def dumpCallstack(callstacks):
+  global source_db
   for callstack in callstacks:
-    print "%s: %d + %s" %(callstack[0], callstack[1], callstack[2])
+    abs_pc = (callstack[1], callstack[2])
+    if not source_db.has_key(abs_pc):
+      parseSourceInfo(abs_pc)
+
+    source_info = source_db[abs_pc]
+    if source_info[0]:
+      print "%s!%s(%s:%s)" %(shared_libraries[callstack[1]], \
+          source_info[2], source_info[0], source_info[1])
+    else:
+      print "%s!%s" %(shared_libraries[callstack[1]], \
+          source_info[2])
 
 class BlockDiff(object):
   def __init__(self, callstacks, block1, block2):
@@ -83,11 +134,15 @@ class BlockDiff(object):
     self.increment = block2.total - block1.total
 
   def dumpDiff(self):
+    if self.block2.total == self.block1.total:
+      return 0
+
     print "Allocation: (%d - %d) bytes, (%d - %d) calls" \
         %(self.block2.total, self.block1.total, \
         self.block2.calls, self.block1.calls)
     dumpCallstack(self.callstacks)
     print
+    return self.block2.total - self.block1.total
 
 def memoryDiff(snapshot1, snapshot2):
   mem1 = [m for m in snapshot1.mem_db.itervalues()]
@@ -128,8 +183,10 @@ def memoryDiff(snapshot1, snapshot2):
     j += 1
 
   mem_stats.sort(key=lambda v: -v.increment)
+  increased = 0
   for m in mem_stats:
-    m.dumpDiff()
+    increased += m.dumpDiff()
+  print "Total increase", increased, "bytes"
 
 def main():
   if len(sys.argv) == 1 or len(sys.argv) > 3:
