@@ -3,6 +3,7 @@
 import sys
 import re
 import os
+import os.path
 
 kInitState = 0 # initial state, waiting for prelogue
 kSoState = 1 # prelogue found, handling the shared libraries
@@ -13,6 +14,92 @@ kEndState = 4 # Memory dump over
 shared_libraries = {}
 
 source_db = {}
+g_lib_search_path = ["."]
+
+def findLibInDirectory(path, d):
+  (path, sopath) = os.path.split(path)
+  failed = False
+
+  while not os.access(os.path.join(d, sopath), os.F_OK):
+    if path == "/" or path == "":
+      failed = True
+      break
+    (head, tail) = os.path.split(path)
+    sopath = os.path.join(tail, sopath)
+
+  if not failed:
+    return os.path.join(d, sopath)
+  return None
+
+def findLibraryPath(p):
+  for d in g_lib_search_path:
+    path = findLibInDirectory(p, d)
+    if path:
+      return path
+  return None
+
+def parseSourceInfo(abs_pc):
+  global source_db
+
+  gdb = "arm-linux-androideabi-gdb"
+  so_name = shared_libraries[abs_pc[0]]
+  gdb_command = "%s /home/tyrone/src/debug/minote/lib/%s --batch --eval-command \"info line *0x%s\"" %(gdb, so_name, abs_pc[1])
+  pattern = "Line\s+(\d+)\s*of\s*\"([^\"]*)\"\s*starts at address [^<]*<(.*)> and ends at"
+  fd = os.popen(gdb_command, "r")
+  for line in fd:
+    m = re.search(pattern, line)
+    if m:
+      lineno = m.group(1)
+      source = m.group(2)
+      symbol = m.group(3)
+      source_db[abs_pc] = (source, lineno, symbol)
+      return
+    pattern2 = "No line number information available for address [^<]*<([^\+]*)\+(\d+)>"
+    m = re.search(pattern2, line)
+    if m:
+      lineno = ""
+      source = ""
+      symbol = m.group(1)
+      offset = m.group(2)
+      symbol = os.popen("c++filt %s" %symbol, "r").read().strip()
+      source_db[abs_pc] = (source, lineno, symbol + "+" + offset)
+      return
+    pattern3 = "No line number information available for address"
+    m = re.search(pattern3, line)
+    if m:
+      source_db[abs_pc] = ("", "", "0x" + abs_pc[1])
+      return
+
+  print >>sys.stderr, "Error in handling: ", abs_pc, so_name
+
+class SourceInfo(object):
+  def __init__(self, rel_pc):
+    self.rel_pc = rel_pc
+    self.hasSource = False
+    self.source = ""
+    self.line = -1
+    self.symbol = ""
+    self.offset = -1
+
+class Library(object):
+  def __init__(self, path):
+    self.path = path
+    self.pending_addresses = {}
+
+  def addPc(self, abs_pc, rel_pc):
+    self.pending_addresses[rel_pc] = SourceInfo()
+
+  def queryPc(self, rel_pc):
+    if self.pending_addresses.has_key(rel_pc):
+      return self.pending_addresses[rel_pc]
+    return SourceInfo(rel_pc)
+
+  def loadDebugInfo(self):
+    path = findLibraryPath(self.path)
+    if not path:
+      print >>sys.stderr, "Failed to find the object file:", self.path
+      return
+    print >>sys.stderr, "Found the object file:", path
 
 class MemoryBlock(object):
   def __init__(self, callid, total, calls):
@@ -77,40 +164,6 @@ class Snapshot(object):
           self.cur_mem = None
           state = kBacktraceState
 
-def parseSourceInfo(abs_pc):
-  global source_db
-
-  gdb = "arm-linux-androideabi-gdb"
-  so_name = shared_libraries[abs_pc[0]]
-  gdb_command = "%s /home/tyrone/src/debug/minote/lib/%s --batch --eval-command \"info line *0x%s\"" %(gdb, so_name, abs_pc[1])
-  pattern = "Line\s+(\d+)\s*of\s*\"([^\"]*)\"\s*starts at address [^<]*<(.*)> and ends at"
-  fd = os.popen(gdb_command, "r")
-  for line in fd:
-    m = re.search(pattern, line)
-    if m:
-      lineno = m.group(1)
-      source = m.group(2)
-      symbol = m.group(3)
-      source_db[abs_pc] = (source, lineno, symbol)
-      return
-    pattern2 = "No line number information available for address [^<]*<([^\+]*)\+(\d+)>"
-    m = re.search(pattern2, line)
-    if m:
-      lineno = ""
-      source = ""
-      symbol = m.group(1)
-      offset = m.group(2)
-      symbol = os.popen("c++filt %s" %symbol, "r").read().strip()
-      source_db[abs_pc] = (source, lineno, symbol + "+" + offset)
-      return
-    pattern3 = "No line number information available for address"
-    m = re.search(pattern3, line)
-    if m:
-      source_db[abs_pc] = ("", "", "0x" + abs_pc[1])
-      return
-
-  print >>sys.stderr, "Error in handling: ", abs_pc, so_name
-
 def dumpCallstack(callstacks):
   global source_db
   for callstack in callstacks:
@@ -164,7 +217,8 @@ def memoryDiff(snapshot1, snapshot2):
           MemoryBlock(block1.callid, 0, 0)))
       i += 1
     elif block1.callid == block2.callid:
-      mem_stats.append(BlockDiff(block1.callstacks, block1, block2))
+      if block1.total != block2.total:
+        mem_stats.append(BlockDiff(block1.callstacks, block1, block2))
       i += 1
       j += 1
     else:

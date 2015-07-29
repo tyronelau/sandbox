@@ -20,10 +20,6 @@ guard_thread::~guard_thread() {
 void guard_thread::sigusr_handler(int signo) {
   (void)signo;
   g_dump_memory.store(true);
-  int fd = open("/data/data/tmp/b.log", O_CREAT | O_WRONLY);
-  char buf[] = "in signal";
-  write(fd, buf, sizeof(buf) - 1);
-  close(fd);
 }
 
 bool guard_thread::create_and_run() {
@@ -44,6 +40,7 @@ bool guard_thread::terminate() {
   if (!g_thread_inited)
     return true;
   signal(SIGUSR1, SIG_IGN);
+  signal(SIGUSR2, SIG_IGN);
 
   // FIXME(liuyong): destroy the thread
   // pthread_destroy(
