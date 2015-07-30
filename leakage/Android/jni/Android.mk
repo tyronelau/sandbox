@@ -20,7 +20,8 @@ LOCAL_SRC_FILES := \
 	../../CityHash.cpp \
 	../../dllmain.cpp \
 	../../callstack_android.cpp \
-	../../guard_thread.cpp
+	../../guard_thread.cpp \
+	../../allocator.cpp
 
 LOCAL_LDLIBS := -ldl
 

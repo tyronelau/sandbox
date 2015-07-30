@@ -4,6 +4,8 @@ import sys
 import re
 import os
 import os.path
+import tempfile
+import argparse
 
 kInitState = 0 # initial state, waiting for prelogue
 kSoState = 1 # prelogue found, handling the shared libraries
@@ -13,8 +15,10 @@ kEndState = 4 # Memory dump over
 
 shared_libraries = {}
 
-source_db = {}
-g_lib_search_path = ["."]
+g_lib_search_path = [".", "/home/tyrone/src/debug/minote", \
+    "/home/tyrone/src/debug/minote/lib"]
+
+g_is_android = False
 
 def findLibInDirectory(path, d):
   (path, sopath) = os.path.split(path)
@@ -24,7 +28,7 @@ def findLibInDirectory(path, d):
     if path == "/" or path == "":
       failed = True
       break
-    (head, tail) = os.path.split(path)
+    (path, tail) = os.path.split(path)
     sopath = os.path.join(tail, sopath)
 
   if not failed:
@@ -36,70 +40,124 @@ def findLibraryPath(p):
     path = findLibInDirectory(p, d)
     if path:
       return path
-  return None
+  return p
 
-def parseSourceInfo(abs_pc):
-  global source_db
+kUnknownType = 0
+kExecutableType = 1
+kDynamicType = 2
 
-  gdb = "arm-linux-androideabi-gdb"
-  so_name = shared_libraries[abs_pc[0]]
-  gdb_command = "%s /home/tyrone/src/debug/minote/lib/%s --batch --eval-command \"info line *0x%s\"" %(gdb, so_name, abs_pc[1])
-  pattern = "Line\s+(\d+)\s*of\s*\"([^\"]*)\"\s*starts at address [^<]*<(.*)> and ends at"
-  fd = os.popen(gdb_command, "r")
-  for line in fd:
-    m = re.search(pattern, line)
-    if m:
-      lineno = m.group(1)
-      source = m.group(2)
-      symbol = m.group(3)
-      source_db[abs_pc] = (source, lineno, symbol)
-      return
-    pattern2 = "No line number information available for address [^<]*<([^\+]*)\+(\d+)>"
-    m = re.search(pattern2, line)
-    if m:
-      lineno = ""
-      source = ""
-      symbol = m.group(1)
-      offset = m.group(2)
-      symbol = os.popen("c++filt %s" %symbol, "r").read().strip()
-      source_db[abs_pc] = (source, lineno, symbol + "+" + offset)
-      return
-    pattern3 = "No line number information available for address"
-    m = re.search(pattern3, line)
-    if m:
-      source_db[abs_pc] = ("", "", "0x" + abs_pc[1])
-      return
+def getObjectFileType(path):
+  type_pattern = "Type:\s*(\w*)\s*\("
+  load_pattern = "LOAD\s*0x([a-fA-F0-9]+)\s0x([a-fA-F0-9]+)"
+  elf_cmd = "readelf -hl %s" %path
+  object_type = kUnknownType
+  base_address = 0
 
-  print >>sys.stderr, "Error in handling: ", abs_pc, so_name
+  for line in os.popen(elf_cmd, "r"):
+    m = re.search(type_pattern, line)
+    if m:
+      exec_type = m.group(1)
+      if exec_type == "EXEC":
+        object_type = kExecutableType
+      elif exec_type == "DYN":
+        object_type = kDynamicType
+      else:
+        object_type = kUnknownType
+      continue
+    m = re.search(load_pattern, line)
+    if m:
+      offset = int(m.group(1), 16)
+      addr = int(m.group(2), 16)
+      if offset == 0:
+        base_address = addr
+
+  return (object_type, base_address)
 
 class SourceInfo(object):
-  def __init__(self, rel_pc):
-    self.rel_pc = rel_pc
-    self.hasSource = False
-    self.source = ""
-    self.line = -1
-    self.symbol = ""
-    self.offset = -1
+  def __init__(self, source, line, symbol):
+    self.source = source
+    self.line = line
+    self.symbol = symbol
 
 class Library(object):
   def __init__(self, path):
     self.path = path
-    self.pending_addresses = {}
+    self.pending_addresses = set()
+    self.address_db = {}
 
-  def addPc(self, abs_pc, rel_pc):
-    self.pending_addresses[rel_pc] = SourceInfo()
+  def addPc(self, rel_pc):
+    self.pending_addresses.add(rel_pc)
 
   def queryPc(self, rel_pc):
-    if self.pending_addresses.has_key(rel_pc):
-      return self.pending_addresses[rel_pc]
-    return SourceInfo(rel_pc)
+    if self.address_db.has_key(rel_pc):
+      return self.address_db[rel_pc]
+    return None
 
+  def parseSourceInfo(self, so_path):
+    (object_type, base_address) = getObjectFileType(so_path)
+
+    addresses = [a + base_address for a in self.pending_addresses]
+    addresses.sort()
+
+    cmd_fd = tempfile.NamedTemporaryFile(delete=False)
+    for a in addresses:
+      print >>cmd_fd, "info line *0x%x" %a
+    cmd_file = cmd_fd.name
+    cmd_fd.close()
+
+    gdb = "gdb"
+    if g_is_android:
+      gdb = "arm-linux-androideabi-gdb"
+
+    gdb_command = "%s %s -batch -x %s" %(gdb, so_path, cmd_file)
+    fd = os.popen(gdb_command, "r")
+
+    index = 0
+    for line in fd:
+      pattern = "Line\s+(\d+)\s*of\s*\"([^\"]*)\"\s*starts at address [^<]*<(.*)> and ends at"
+      m = re.search(pattern, line)
+      if m:
+        lineno = m.group(1)
+        source = m.group(2)
+        symbol = m.group(3)
+
+        rel_pc = addresses[index] - base_address
+        index += 1
+        self.address_db[rel_pc] = SourceInfo(source, lineno, symbol)
+        continue
+
+      pattern2 = "No line number information available for address [^<]*<([^\+]*)\+(\d+)>"
+      m = re.search(pattern2, line)
+      if m:
+        lineno = ""
+        source = ""
+        symbol = m.group(1)
+        offset = m.group(2)
+        symbol = os.popen("c++filt %s" %symbol, "r").read().strip()
+
+        rel_pc = addresses[index] - base_address
+        index += 1
+        self.address_db[rel_pc] = SourceInfo(source, lineno, symbol + "+" + offset)
+        continue
+
+      pattern3 = "No line number information available for address"
+      m = re.search(pattern3, line)
+      if m:
+        rel_pc = addresses[index] - base_address
+        index += 1
+        self.address_db[rel_pc] = SourceInfo("", -1, "0x%x" %rel_pc)
+        continue
+
+    if index != len(addresses):
+      print >>sys.stderr, "Error in parsing gdb output for", so_path
+  
   def loadDebugInfo(self):
     path = findLibraryPath(self.path)
     if not path:
       print >>sys.stderr, "Failed to find the object file:", self.path
       return
     print >>sys.stderr, "Found the object file:", path
+    self.parseSourceInfo(path)
 
 class MemoryBlock(object):
   def __init__(self, callid, total, calls):
@@ -113,9 +171,7 @@ class MemoryBlock(object):
 
 class Snapshot(object):
   def __init__(self, dmp_file):
-    # self.dmp_file = dmp_file
     self.mem_db = {}
-    #self.shared_libraries = {}
     if dmp_file:
       self.loadFile(dmp_file)
 
@@ -155,29 +211,29 @@ class Snapshot(object):
         call_pattern = "([0-9A-Fa-f]+):\s*(\d+)\s*\+\s*([0-9A-Fa-f]+)"
         m = re.match(call_pattern, line)
         if m:
-          abs_pc = m.group(1)
+          abs_pc = int(m.group(1), 16)
           handle = int(m.group(2))
-          rel_pc = m.group(3)
+          rel_pc = int(m.group(3), 16)
           self.cur_mem.addCallstack(abs_pc, handle, rel_pc)
         else:
           self.mem_db[self.cur_mem.callid] = self.cur_mem
           self.cur_mem = None
           state = kBacktraceState
 
-def dumpCallstack(callstacks):
-  global source_db
-  for callstack in callstacks:
-    abs_pc = (callstack[1], callstack[2])
-    if not source_db.has_key(abs_pc):
-      parseSourceInfo(abs_pc)
-
-    source_info = source_db[abs_pc]
-    if source_info[0]:
-      print "%s!%s(%s:%s)" %(shared_libraries[callstack[1]], \
-          source_info[2], source_info[0], source_info[1])
+def dumpCallstack(callstacks, debug_info):
+  for (abs_pc, handle, rel_pc) in callstacks:
+    if not debug_info.has_key(handle):
+      print >>sys.stderr, "Error in dumping callstack: No library found"
+      sys.exit(-1)
+    lib = debug_info[handle]
+    src = lib.queryPc(rel_pc)
+    if not src:
+      src = SourceInfo("", -1, "0x%x" %rel_pc)
+    if src.source:
+      print "%s!%s(%s:%s)" %(lib.path, \
+          src.symbol, src.source, src.line)
     else:
-      print "%s!%s" %(shared_libraries[callstack[1]], \
-          source_info[2])
+      print "%s!%s" %(lib.path, src.symbol)
 
 class BlockDiff(object):
   def __init__(self, callstacks, block1, block2):
@@ -186,14 +242,14 @@ class BlockDiff(object):
     self.block2 = block2
     self.increment = block2.total - block1.total
 
-  def dumpDiff(self):
+  def dumpDiff(self, debug_info):
     if self.block2.total == self.block1.total:
       return 0
 
     print "Allocation: (%d - %d) bytes, (%d - %d) calls" \
         %(self.block2.total, self.block1.total, \
         self.block2.calls, self.block1.calls)
-    dumpCallstack(self.callstacks)
+    dumpCallstack(self.callstacks, debug_info)
     print
     return self.block2.total - self.block1.total
 
@@ -236,18 +292,44 @@ def memoryDiff(snapshot1, snapshot2):
         0, 0), mem2[j]))
     j += 1
 
+  libraries = {}
+  for diff in mem_stats:
+    if diff.increment == 0:
+      continue
+    for (abs_pc, handle, rel_pc) in diff.callstacks:
+      if not libraries.has_key(handle):
+        libraries[handle] = Library(shared_libraries[handle])
+      lib = libraries[handle]
+      lib.addPc(rel_pc)
+
+  # start to perform time-consuming jobs
+  for lib in libraries.itervalues():
+    lib.loadDebugInfo()
+
   mem_stats.sort(key=lambda v: -v.increment)
   increased = 0
   for m in mem_stats:
-    increased += m.dumpDiff()
+    increased += m.dumpDiff(libraries)
   print "Total increase", increased, "bytes"
 
 def main():
-  if len(sys.argv) == 1 or len(sys.argv) > 3:
-    print >>sys.stderr, "usage: python", sys.argv[0], "snapshot1.dmp [snapshot2.dmp]"
+  parser = argparse.ArgumentParser(description='Memory dump comparation')
+  parser.add_argument("--android", action="store_true", default=False)
+  parser.add_argument("--solib-path", dest="solib_path", default=".")
+  parser.add_argument("snapshot", metavar='SNAPSHOT', type=str, nargs="+", \
+      help="list of memory snapshot")
+
+  args = parser.parse_args()
+  if len(args.snapshot) > 2:
+    print >>sys.stderr, "Too many snapshots"
     sys.exit(-1)
+
+  global g_lib_search_path
+  g_lib_search_path = [os.path.expandvars(os.path.expanduser(path)) \
+      for path in args.solib_path.split(":")]
+
   snapshots = []
-  for dmp in sys.argv[1:]:
+  for dmp in args.snapshot:
     snapshots.append(Snapshot(dmp))
   if len(snapshots) == 1:
     memoryDiff(Snapshot(""), snapshots[0])

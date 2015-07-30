@@ -75,10 +75,6 @@ static callstack_map_t *g_callstack_db;
 static memusage_map_t *g_memusage_db;
 static mem_map_t *g_malloc_db;
 
-void* operator new(size_t size) {
-  return malloc(size);
-}
-
 static void init_backtrace() {
   g_so_db = ::new (g_library_db_buf) so_db_t();
   g_callstack_db = ::new (g_callstack_buf) callstack_map_t();
@@ -157,7 +153,7 @@ void record_free(void *p) {
 
   if (--((*g_memusage_db)[callid]) == 0) {
     g_memusage_db->erase(callid);
-    // FIXME(liuyong): erase callstack from g_callstack_db
+    // NOTE(liuyong): don't erase callstack from g_callstack_db
   }
 }
 
@@ -341,7 +337,12 @@ void dump_memory_snapshot() {
   if (!g_init)
     return;
 
+#ifdef __ANDROID__
   int fd = open("/data/data/tmp/a.log", O_CREAT | O_APPEND | O_WRONLY);
+#else
+  int fd = open("./a.log", O_CREAT | O_APPEND | O_WRONLY);
+#endif
+
   if (fd == -1) {
     char *p = 0;
     *p = 0;

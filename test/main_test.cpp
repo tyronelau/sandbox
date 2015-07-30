@@ -12,22 +12,9 @@
 #include <iostream>
 #include <vector>
 
+#include "interface.h"
+
 using namespace std;
-
-struct base {
-  virtual ~base() {}
-  virtual void foo() = 0;
-  virtual void bar() = 0;
-};
-
-struct derived : public base {
-  derived() { a.resize(100); }
-  virtual ~derived() {}
-  virtual void foo() {}
-  virtual void bar() {}
-
-  std::vector<int> a;
-};
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
@@ -45,7 +32,7 @@ int main(int argc, char *argv[]) {
   valloc(8192);
 
   for (int i = 0; i < 100; ++i) {
-    base *p = new derived();
+    base *p = create_instance();
     p->foo();
     p->bar();
     if (i % 2 == 0)
