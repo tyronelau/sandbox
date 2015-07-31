@@ -14,14 +14,19 @@
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
+#include <utility>
+
 // #include <mutex>
-#include <string>
-#include <unordered_map>
+// #include <string>
+// #include <unordered_map>
 
 #include "my_mutex.h"
 #include "allocator.h"
 #include "CityHash.h"
 #include "callstack_info.h"
+#include "const_string.h"
+#include "container/internal/stl_pair.h"
+#include "container/stl_unordered_map.h"
 
 typedef my_mutex mutex_t;
 typedef my_lock_guard<my_mutex> lock_guard_t;
@@ -34,20 +39,19 @@ struct callstack_hasher {
 
 typedef uint32_t callid_t;
 
-typedef std::pair<const callstack, callstack_detail> callid_elem_t;
-typedef std::unordered_map<callstack, callstack_detail, callstack_hasher,
-    std::equal_to<callstack>, native_allocator<callid_elem_t> > callstack_map_t;
+typedef base::pair<const callstack, callstack_detail> callid_elem_t;
+typedef base::unordered_map<callstack, callstack_detail, callstack_hasher,
+    std::equal_to<callstack>, base::native_allocator<callid_elem_t> > callstack_map_t;
 
-typedef std::unordered_map<callid_t, uint32_t, std::hash<callid_t>,
+typedef base::unordered_map<callid_t, uint32_t, std::hash<callid_t>,
     std::equal_to<callid_t>,
-    native_allocator<std::pair<const callid_t, uint32_t> > > memusage_map_t;
+    base::native_allocator<std::pair<const callid_t, uint32_t> > > memusage_map_t;
 
-typedef std::pair<const pointer_type_t, callid_t> malloc_record_t;
-typedef std::unordered_map<pointer_type_t, callid_t, std::hash<pointer_type_t>,
-    std::equal_to<pointer_type_t>, native_allocator<malloc_record_t> > mem_map_t;
+typedef base::pair<const pointer_type_t, callid_t> malloc_record_t;
+typedef base::unordered_map<pointer_type_t, callid_t, std::hash<pointer_type_t>,
+    std::equal_to<pointer_type_t>, base::native_allocator<malloc_record_t> > mem_map_t;
 
-typedef std::basic_string<char, std::char_traits<char>,
-    native_allocator<char> > native_string_t; 
+typedef base::const_string native_string_t; 
 
 struct sopath_hasher {
   size_t operator()(const native_string_t &s) const {
@@ -55,9 +59,9 @@ struct sopath_hasher {
   }
 };
 
-typedef std::pair<const native_string_t, pointer_type_t> so_item_t;
-typedef std::unordered_map<native_string_t, pointer_type_t, sopath_hasher,
-    std::equal_to<native_string_t>, native_allocator<so_item_t> > so_db_t;
+typedef base::pair<const native_string_t, pointer_type_t> so_item_t;
+typedef base::unordered_map<native_string_t, pointer_type_t, sopath_hasher,
+    std::equal_to<native_string_t>, base::native_allocator<so_item_t> > so_db_t;
 
 static mutex_t g_backtrace_lock;
 static bool g_init = false;
@@ -84,7 +88,8 @@ static void init_backtrace() {
   g_init = true;
 }
 
-static int simple_snprintf(char *p, int len, const char *fmt, ...);
+extern "C"
+int simple_snprintf(char *p, int len, const char *fmt, ...);
 
 static callstack_detail create_callstack_info(const callstack &bt) {
   callstack_detail detail;
@@ -219,7 +224,8 @@ static int simple_strncpy(char *dst, const char *src, int n) {
 }
 
 // A simple but not-safe snprintf to work around the recursive malloc-calling.
-static int simple_snprintf(char *p, int len, const char *fmt, ...) {
+extern "C"
+int simple_snprintf(char *p, int len, const char *fmt, ...) {
   int r = len;
   int i = 0;
   int state = 0;
@@ -313,7 +319,7 @@ static void dump_so_paths(int fd) {
       n = 0;
     }
     int cnt = simple_snprintf(buf + n, kBufSize - n, "handle %d: %s\n", int(so.second),
-        so.first.c_str());
+        so.first.get_cstr());
     n += cnt;
   }
 
@@ -337,15 +343,14 @@ void dump_memory_snapshot() {
   if (!g_init)
     return;
 
+  int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #ifdef __ANDROID__
-  int fd = open("/data/data/tmp/a.log", O_CREAT | O_APPEND | O_WRONLY);
+  int fd = open("/data/data/tmp/a.log", O_CREAT | O_APPEND | O_WRONLY, mode);
 #else
-  int fd = open("./a.log", O_CREAT | O_APPEND | O_WRONLY);
+  int fd = open("./a.log", O_CREAT | O_APPEND | O_WRONLY, mode);
 #endif
 
   if (fd == -1) {
-    char *p = 0;
-    *p = 0;
     return;
   }
 

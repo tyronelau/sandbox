@@ -2,6 +2,7 @@
 #include <new>
 #include "memory_func.h"
 
+namespace base {
 template <typename T>
 struct native_allocator {
   typedef T value_type;
@@ -70,5 +71,7 @@ inline bool operator==(const native_allocator<T1> &a, const native_allocator<T2>
 template <typename T1, typename T2>
 inline bool operator!=(const native_allocator<T1> &a, const native_allocator<T2> &b) {
   return !(a == b);
+}
+
 }
 

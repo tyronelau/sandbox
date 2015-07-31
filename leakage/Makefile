@@ -1,12 +1,14 @@
-CFLAGS += -fPIC -O0 -g -DDEBUG -fvisibility=hidden  -fvisibility-inlines-hidden
-CXXFLAGS += -fPIC -O0 -g -DDEBUG -std=c++0x -fvisibility=hidden  -fvisibility-inlines-hidden
-LDFLAGS += -shared -fPIC -ldl -lunwind -lpthread -Wl,-z,defs -Wl,--exclude-libs,ALL
+CFLAGS += -fPIC -O0 -g -P -DDEBUG -fvisibility=hidden  -fvisibility-inlines-hidden
+INCLUDE_DIR = -Icontainer
+CXXFLAGS += -fPIC -O0 -g -DDEBUG -std=c++0x -fvisibility=hidden  -fvisibility-inlines-hidden -fno-exceptions
+LDFLAGS += -shared -fPIC -ldl -lunwind -lpthread -lc -lm -Wl,-z,defs -Wl,--exclude-libs,ALL -lgcc #-nodefaultlibs
 
 BUILD_PATH := build
 DEP_PATH := $(BUILD_PATH)/.deps
 OBJ_PATH := $(BUILD_PATH)/.objs
 BIN_PATH := $(BUILD_PATH)/lib
-SOURCES = backtrace.cpp dllmain.cpp CityHash.cpp guard_thread.cpp callstack_linux.cpp
+SOURCES = backtrace.cpp dllmain.cpp CityHash.cpp guard_thread.cpp callstack_linux.cpp \
+					container/hashtable-aux.cpp malloc/malloc.c malloc/itoa.c
 
 .SECONDEXPANSION:
 .PHONY: all pre clean
@@ -17,6 +19,8 @@ pre:
 	@mkdir -p $(BUILD_PATH)
 	@mkdir -p $(DEP_PATH)
 	@mkdir -p $(OBJ_PATH)
+	@mkdir -p $(OBJ_PATH)/container
+	@mkdir -p $(OBJ_PATH)/malloc
 	@mkdir -p $(BIN_PATH)
 
 clean:
@@ -30,10 +34,11 @@ $(OBJ_PATH)/%.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 $(OBJ_PATH)/%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) $(INCLUDE_DIR) -o $@ -c $<
 
 REAL_TARGET := $(BIN_PATH)/libdebug.so
 
+LINKER = $(CXX)
 $(REAL_TARGET): $(addprefix $(OBJ_PATH)/, $(addsuffix .o, $(basename $(SOURCES))))
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(EXTRA_LDFLAGS) $(LDLIBS) 
+	$(LINKER) -o $@ $^ $(LDFLAGS) $(EXTRA_LDFLAGS) #-###
 
