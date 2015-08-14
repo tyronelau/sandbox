@@ -9,16 +9,18 @@
 #include <cassert>
 #include <cerrno>
 #include <cstdlib>
-#include <iostream>
+// #include <iostream>
 #include <vector>
 
 #include "interface.h"
+
+// std::vector<int> a(100);
 
 using namespace std;
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
-    cout << "usage: "<< argv[0] << " ip port" << endl;
+    // cout << "usage: "<< argv[0] << " ip port" << endl;
     return -1;
   }
 
@@ -39,6 +41,7 @@ int main(int argc, char *argv[]) {
       delete p;
   }
 
+  fprintf(stdout, "Ready to start...\n");
   while (true) {
     sleep(1);
   }
@@ -70,7 +73,7 @@ int main(int argc, char *argv[]) {
 
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (0 != fcntl(fd, F_SETFL, O_NONBLOCK)) {
-    cerr << "Failed to set the socket to non-blocking mode" << endl;
+    fprintf(stderr, "Failed to set the socket to non-blocking mode\n");
     return -1;
   }
 
@@ -81,7 +84,7 @@ int main(int argc, char *argv[]) {
 
   int ret = connect(fd, (sockaddr*)&addr, sizeof(addr));
   if (ret == 0) {
-    cout << "connect success" << endl;
+    fprintf(stdout, "connect success\n");
     return 0;
   }
 
@@ -89,16 +92,16 @@ int main(int argc, char *argv[]) {
 
   switch (error) {
   case ECONNREFUSED:
-    cerr << "Connection refused" << endl;
+    fprintf(stderr, "Connection refused\n");
     return -1;
   case EINPROGRESS:
-    cout << "Connecting.." << endl;
+    fprintf(stdout, "Connecting...\n");
     break;
   case EAGAIN:
-    cerr << "No free port available" << endl;
+    fprintf(stderr, "No free port available\n");
     return -1;
   default:
-    cerr << "Unknown error: " << error << endl;
+    fprintf(stderr, "Unknown error: %d\n", error);
     return -1;
   }
 
@@ -114,35 +117,35 @@ int main(int argc, char *argv[]) {
 
     ret = select(fd + 1, &rds, &wds, &eds, NULL);
     if (ret == 0) {
-      cerr << "unknown issue: " << endl;
+      fprintf(stderr, "Unknown issue\n");
       return -1;
     }
 
     if (ret > 0) {
       if (FD_ISSET(fd, &rds))
-        cout << "readable\n";
+        fprintf(stdout, "Readable\n");
       if (FD_ISSET(fd, &wds)) {
-        cout << "writable\n";
+        fprintf(stdout, "Writable\n");
         long opt = 0;
         socklen_t len = sizeof(opt);
         int s = getsockopt(fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<void *>(&opt), &len);
         assert(s == 0);
-        cout << "len: " << len << endl;
+        fprintf(stdout, "len: %d\n", int(len));
         if (opt) {
-          cout << "Connection error, error code: " << opt << endl;
+          fprintf(stdout, "connection error, code: %ld\n", opt);
           return -1;
         } else {
-          cout << "Connection success!" << endl;
+          fprintf(stdout, "Connection success\n");
           return -1;
         }
       }
 
       if (FD_ISSET(fd, &eds)) {
-        cout << "error\n";
+        fprintf(stdout, "Error\n");
       }
       break;
     } else {
-      cout << "unknown ret: " << ret << ", " << errno << endl;
+      fprintf(stdout, "Unknown Return: %d\n", ret);
     }
   }
 

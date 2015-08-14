@@ -20,19 +20,83 @@ void record_free(void *p);
 void dump_memory_snapshot();
 
 extern "C" {
+  void*  __libc_malloc(size_t);
+  void  __libc_free(void *);
+  void*  __libc_realloc(void*, size_t);
+  void*  __libc_calloc(size_t, size_t);
+  void*  __libc_valloc(size_t);
+  void*  __libc_memalign(size_t, size_t);
+int simple_snprintf(char *p, int len, const char *fmt, ...);
+}
+
+class A {
+ public:
+  A();
+};
+
+A::A() {
+  static const char buf[] = "on loading in ctor\n";
+  write(2, buf, sizeof(buf) - 1);
+  g_real_malloc = __libc_malloc;
+  char buff[100];
+  int n = simple_snprintf(buff, 100, "ctor: malloc: %x, %x\n", &g_real_malloc, g_real_malloc);
+  write(2, buff, n);
+
+  g_real_free = __libc_free;
+  g_real_calloc = __libc_calloc;
+  g_real_realloc = __libc_realloc;
+  g_real_valloc = __libc_valloc;
+  g_real_memalign = __libc_memalign;
+}
+
+A a;
+
+class B {
+ public:
+  B() {
+    char buf[] = "on initialization b\n";
+    write(2, buf, sizeof(buf) - 1); 
+    void *q = malloc(100);
+  }
+};
+
+B b;
+
+extern "C" {
 void __attribute__ ((constructor)) dll_load(void);
 void __attribute__ ((destructor)) dll_unload(void);
+
+void*  __libc_malloc(size_t);
+void  __libc_free(void *);
+void*  __libc_realloc(void*, size_t);
+void*  __libc_calloc(size_t, size_t);
+void*  __libc_valloc(size_t);
+void*  __libc_memalign(size_t, size_t);
+
 
 void dll_load(void) {
   // FIXME(liuyong): dlsym will sometimes call |malloc|, but this library
   // is still initializing
-  g_real_malloc = (alloc_func_t)dlsym(RTLD_NEXT, "malloc");
-  g_real_free = (free_func_t)dlsym(RTLD_NEXT, "free");
-  g_real_realloc = (realloc_func_t)dlsym(RTLD_NEXT, "realloc");
-  g_real_calloc = (calloc_func_t)dlsym(RTLD_NEXT, "calloc");
+  static const char buf[] = "on loading from dll_load\n";
+  write(2, buf, sizeof(buf) - 1);
+  g_real_malloc = __libc_malloc;
+  g_real_free = __libc_free;
+  g_real_calloc = __libc_calloc;
+  g_real_realloc = __libc_realloc;
+  g_real_valloc = __libc_valloc;
+  g_real_memalign = __libc_memalign;
+
+  char buff[100];
+  int n = simple_snprintf(buff, 100, "malloc: %x, %x\n", &g_real_malloc, g_real_malloc);
+  write(2, buff, n);
+
+  // g_real_malloc = (alloc_func_t)dlsym(RTLD_NEXT, "malloc");
+  // g_real_free = (free_func_t)dlsym(RTLD_NEXT, "free");
+  // g_real_realloc = (realloc_func_t)dlsym(RTLD_NEXT, "realloc");
+  // g_real_calloc = (calloc_func_t)dlsym(RTLD_NEXT, "calloc");
   g_real_posix_memalign = (posix_memalign_func_t)dlsym(RTLD_NEXT, "posix_memalign");
-  g_real_valloc = (alloc_func_t)dlsym(RTLD_NEXT, "valloc");
-  g_real_memalign = (calloc_func_t)dlsym(RTLD_NEXT, "memalign");
+  // g_real_valloc = (alloc_func_t)dlsym(RTLD_NEXT, "valloc");
+  // g_real_memalign = (calloc_func_t)dlsym(RTLD_NEXT, "memalign");
 
   guard_thread::create_and_run();
 }

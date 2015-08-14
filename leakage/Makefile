@@ -1,7 +1,7 @@
 CFLAGS += -fPIC -O0 -g -P -DDEBUG -fvisibility=hidden  -fvisibility-inlines-hidden
 INCLUDE_DIR = -Icontainer
 CXXFLAGS += -fPIC -O0 -g -DDEBUG -std=c++0x -fvisibility=hidden  -fvisibility-inlines-hidden -fno-exceptions
-LDFLAGS += -shared -fPIC -ldl -lunwind -lpthread -lc -lm -Wl,-z,defs -Wl,--exclude-libs,ALL -lgcc #-nodefaultlibs
+LDFLAGS += -shared -fPIC -ldl -lunwind -lpthread -lc -lm -Wl,-z,defs -Wl,--exclude-libs,ALL -static-libgcc -nodefaultlibs -Wl,-z,initfirst -Wl,-z,nodlopen
 
 BUILD_PATH := build
 DEP_PATH := $(BUILD_PATH)/.deps

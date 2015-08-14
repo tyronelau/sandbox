@@ -3,6 +3,25 @@
 #include <iostream>
 #include <vector>
 
+std::vector<int> g_a(100);
+
+struct A {
+  A();
+  ~A();
+ private:
+  char *p_;
+};
+
+A::A() {
+  p_ = new char[100];
+}
+
+A::~A() {
+  delete []p_;
+}
+
+A a;
+
 struct derived : public base {
   derived() { a_.resize(100); }
   virtual ~derived() {}
