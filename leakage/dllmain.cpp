@@ -15,6 +15,8 @@ posix_memalign_func_t g_real_posix_memalign = NULL;
 alloc_func_t g_real_valloc = NULL;
 calloc_func_t g_real_memalign = NULL;
 
+// bool g_initialized = false;
+
 void dump_backtrace(void *p, size_t size);
 void record_free(void *p);
 void dump_memory_snapshot();
@@ -26,7 +28,7 @@ extern "C" {
   void*  __libc_calloc(size_t, size_t);
   void*  __libc_valloc(size_t);
   void*  __libc_memalign(size_t, size_t);
-int simple_snprintf(char *p, int len, const char *fmt, ...);
+  int simple_snprintf(char *p, int len, const char *fmt, ...);
 }
 
 class A {
@@ -77,24 +79,24 @@ void*  __libc_memalign(size_t, size_t);
 void dll_load(void) {
   // FIXME(liuyong): dlsym will sometimes call |malloc|, but this library
   // is still initializing
-  static const char buf[] = "on loading from dll_load\n";
-  write(2, buf, sizeof(buf) - 1);
-  g_real_malloc = __libc_malloc;
-  g_real_free = __libc_free;
-  g_real_calloc = __libc_calloc;
-  g_real_realloc = __libc_realloc;
-  g_real_valloc = __libc_valloc;
-  g_real_memalign = __libc_memalign;
+  // static const char buf[] = "on loading from dll_load\n";
+  // write(2, buf, sizeof(buf) - 1);
+  // g_real_malloc = __libc_malloc;
+  // g_real_free = __libc_free;
+  // g_real_calloc = __libc_calloc;
+  // g_real_realloc = __libc_realloc;
+  // g_real_valloc = __libc_valloc;
+  // g_real_memalign = __libc_memalign;
 
-  char buff[100];
-  int n = simple_snprintf(buff, 100, "malloc: %x, %x\n", &g_real_malloc, g_real_malloc);
-  write(2, buff, n);
+  // char buff[100];
+  // int n = simple_snprintf(buff, 100, "malloc: %x, %x\n", &g_real_malloc, g_real_malloc);
+  // write(2, buff, n);
 
   // g_real_malloc = (alloc_func_t)dlsym(RTLD_NEXT, "malloc");
   // g_real_free = (free_func_t)dlsym(RTLD_NEXT, "free");
   // g_real_realloc = (realloc_func_t)dlsym(RTLD_NEXT, "realloc");
   // g_real_calloc = (calloc_func_t)dlsym(RTLD_NEXT, "calloc");
-  g_real_posix_memalign = (posix_memalign_func_t)dlsym(RTLD_NEXT, "posix_memalign");
+  // g_real_posix_memalign = (posix_memalign_func_t)dlsym(RTLD_NEXT, "posix_memalign");
   // g_real_valloc = (alloc_func_t)dlsym(RTLD_NEXT, "valloc");
   // g_real_memalign = (calloc_func_t)dlsym(RTLD_NEXT, "memalign");
 
@@ -107,25 +109,19 @@ void dll_unload(void) {
 }
 
 void* malloc(size_t size) {
-  if (g_real_malloc != NULL) {
-    void *p = g_real_malloc(size);
-    if (p != NULL) {
-      dump_backtrace(p, size);
-      return p;
-    }
+  void *p = __libc_malloc(size);
+  if (p != NULL) {
+    dump_backtrace(p, size);
+    return p;
   }
-
-  return NULL;
 }
 
 void free(void *ptr) {
   if (ptr == NULL)
     return;
 
-  if (g_real_free != NULL) {
-    g_real_free(ptr);
-    record_free(ptr);
-  }
+  __libc_free(ptr);
+  record_free(ptr);
 }
 
 void* realloc(void *ptr, size_t size) {
@@ -142,13 +138,10 @@ void* realloc(void *ptr, size_t size) {
     return NULL;
   }
 
-  if (g_real_realloc == NULL)
-    return NULL;
-
   // Release the pointer |ptr| from our db, but not really destroy it
   record_free(ptr);
 
-  ptr = g_real_realloc(ptr, size);
+  ptr = __libc_realloc(ptr, size);
 
   // Add this pointer into our db, and track it
   dump_backtrace(ptr, size);
@@ -165,29 +158,24 @@ void* calloc(size_t nmem, size_t size) {
   return p;
 }
 
-__attribute__((visibility("default"))) int posix_memalign(void **memptr, size_t alignment, size_t size) {
-  if (g_real_posix_memalign != NULL) {
-    if (!g_real_posix_memalign(memptr, alignment ,size)) {
-      // char buf[] = "memalign called\n";
-      // write(2, buf, sizeof(buf));
-      dump_backtrace(*memptr, size);
-      return 0;
-    }
-  }
-
-  return -1;
-}
+// __attribute__((visibility("default"))) int posix_memalign(void **memptr, size_t alignment, size_t size) {
+//   if (!g_real_posix_memalign(memptr, alignment ,size)) {
+//     // char buf[] = "memalign called\n";
+//     // write(2, buf, sizeof(buf));
+//     dump_backtrace(*memptr, size);
+//     return 0;
+//   }
+// 
+//   return -1;
+// }
 
 __attribute__((visibility("default"))) void* memalign(size_t boundary, size_t size) {
-  if ((g_real_memalign != NULL)) {
-    void *p = g_real_memalign(boundary, size);
-    if (p == NULL)
-      return NULL;
-    dump_backtrace(p, size);
-    return p;
-  }
+  void *p = __libc_memalign(boundary, size);
+  if (p == NULL)
+    return NULL;
 
-  return NULL;
+  dump_backtrace(p, size);
+  return p;
 }
 
 __attribute__((visibility("default"))) void* valloc(size_t size) {

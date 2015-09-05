@@ -44,5 +44,5 @@ $(DLL_TARGET): $(addprefix $(OBJ_PATH)/, $(addsuffix .o, $(basename $(DLL_SOURCE
 EXE_TARGET := $(BIN_PATH)/main_test.exe
 
 $(EXE_TARGET): $(addprefix $(OBJ_PATH)/, $(addsuffix .o, $(basename $(EXE_SOURCES)))) $(DLL_TARGET)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(EXE_LDFLAGS) $(EXTRA_LDFLAGS) $(EXE_LDLIBS) -Wl,-dynamic-linker,/home/tyrone/bin/lib/ld-linux-x86-64.so.2
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(EXE_LDFLAGS) $(EXTRA_LDFLAGS) $(EXE_LDLIBS) #-Wl,-dynamic-linker,/home/tyrone/bin/lib/ld-linux-x86-64.so.2
 

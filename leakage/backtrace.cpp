@@ -63,7 +63,6 @@ typedef base::pair<const native_string_t, pointer_type_t> so_item_t;
 typedef base::unordered_map<native_string_t, pointer_type_t, sopath_hasher,
     std::equal_to<native_string_t>, base::native_allocator<so_item_t> > so_db_t;
 
-static mutex_t g_backtrace_lock;
 static bool g_init = false;
 static uint32_t g_next_callid = 0;
 
@@ -73,17 +72,20 @@ static char g_library_db_buf[sizeof(so_db_t)];
 static char g_callstack_buf[sizeof(callstack_map_t)];
 static char g_memusage_buf[sizeof(memusage_map_t)];
 static char g_malloc_buf[sizeof(mem_map_t)];
+static char g_bt_lock_buf[sizeof(mutex_t)];
 
 static so_db_t *g_so_db;
 static callstack_map_t *g_callstack_db;
 static memusage_map_t *g_memusage_db;
 static mem_map_t *g_malloc_db;
+static mutex_t *g_backtrace_lock;
 
 static void init_backtrace() {
   g_so_db = ::new (g_library_db_buf) so_db_t();
   g_callstack_db = ::new (g_callstack_buf) callstack_map_t();
   g_memusage_db = ::new (g_memusage_buf) memusage_map_t();
   g_malloc_db = ::new (g_malloc_buf) mem_map_t();
+  g_backtrace_lock = ::new (g_bt_lock_buf)mutex_t();
 
   g_init = true;
 }
@@ -127,10 +129,11 @@ void dump_backtrace(void *p, size_t n) {
   if (bt.count == 0)
     return;
 
-  lock_guard_t lock(g_backtrace_lock);
   if (!g_init) {
     init_backtrace();
   }
+
+  lock_guard_t lock(*g_backtrace_lock);
 
   uint32_t callid = 0;
   auto it = g_callstack_db->find(bt);
@@ -146,9 +149,10 @@ void dump_backtrace(void *p, size_t n) {
 }
 
 void record_free(void *p) {
-  lock_guard_t lock(g_backtrace_lock);
   if (!g_init)
     return;
+
+  lock_guard_t lock(*g_backtrace_lock);
   auto it = g_malloc_db->find(reinterpret_cast<pointer_type_t>(p));
   if (it == g_malloc_db->end())
     return;
@@ -339,9 +343,10 @@ static void dump_memory_epilogue(int fd) {
 }
 
 void dump_memory_snapshot() {
-  lock_guard_t lock(g_backtrace_lock);
   if (!g_init)
     return;
+
+  lock_guard_t lock(*g_backtrace_lock);
 
   int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #ifdef __ANDROID__

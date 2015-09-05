@@ -32,7 +32,7 @@ inline bool operator!=(const const_string &a, const const_string &b) {
 
 inline const_string::const_string(const char *p) {
   size_t len = strlen(p); 
-  char *data = reinterpret_cast<char *>(g_real_malloc(len + 1));
+  char *data = reinterpret_cast<char *>(__libc_malloc(len + 1));
 
   assert(data != NULL);
   strcpy(data, p);
@@ -41,8 +41,7 @@ inline const_string::const_string(const char *p) {
 }
 
 inline const_string::~const_string() {
-  if (g_real_free)
-    g_real_free(const_cast<void *>(reinterpret_cast<const void *>(rep_)));
+  __libc_free(const_cast<void *>(reinterpret_cast<const void *>(rep_)));
 }
 
 inline const_string::const_string(const_string &&rhs) {
@@ -57,7 +56,7 @@ inline const_string::const_string(const const_string &rhs) {
   len_ = 0;
 
   if (rhs.rep_) {
-    char *dst = reinterpret_cast<char *>(g_real_malloc(rhs.len_ + 1));
+    char *dst = reinterpret_cast<char *>(__libc_malloc(rhs.len_ + 1));
     strncpy(dst, rhs.rep_, rhs.len_ + 1);
     rep_ = dst;
     len_ = rhs.len_;

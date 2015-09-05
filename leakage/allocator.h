@@ -31,14 +31,13 @@ struct native_allocator {
 
   pointer allocate(size_type n, const_pointer hint = nullptr) {
     (void)hint;
-    void *p = g_real_malloc(n * sizeof(value_type));
+    void *p = __libc_malloc(n * sizeof(value_type));
     return reinterpret_cast<pointer>(p);
   }
 
   void deallocate(pointer p, size_type n) {
     (void)n;
-    if (g_real_free)
-      g_real_free(p);
+    __libc_free(p);
   }
 
   size_type max_size() const noexcept {
