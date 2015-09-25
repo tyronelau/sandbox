@@ -1,4 +1,4 @@
-CFLAGS += -fPIC -O0 -g -P -DDEBUG -fvisibility=hidden  -fvisibility-inlines-hidden
+CFLAGS += -fPIC -O0 -g -P -DDEBUG -fvisibility=hidden  -fvisibility-inlines-hidden -DSHARED
 INCLUDE_DIR = -Icontainer
 CXXFLAGS += -fPIC -O0 -g -DDEBUG -std=c++0x -fvisibility=hidden  -fvisibility-inlines-hidden -fno-exceptions
 LDFLAGS += -shared -fPIC -ldl -lunwind -lpthread -lc -lm -Wl,-z,defs -Wl,--exclude-libs,ALL -static-libgcc -nodefaultlibs -Wl,-z,initfirst -Wl,-z,nodlopen

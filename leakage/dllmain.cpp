@@ -104,7 +104,7 @@ void dll_load(void) {
 }
 
 void dll_unload(void) {
-  // dump_memory_snapshot();
+  dump_memory_snapshot();
   guard_thread::terminate();
 }
 

@@ -2373,6 +2373,17 @@ sysmalloc (INTERNAL_SIZE_T nb, mstate av)
      at least MINSIZE and to have prev_inuse set.
    */
 
+  int cond1 = (old_top == initial_top (av) && old_size == 0);
+  int cond2 = ((unsigned long) (old_size) >= MINSIZE &&
+           prev_inuse (old_top) &&
+           ((unsigned long) old_end & pagemask) == 0);
+
+  if (!(cond1 || cond2)) {
+    mchunkptr p = initial_top(av); 
+    assert(cond1);
+    assert(cond2);
+  }
+
   assert ((old_top == initial_top (av) && old_size == 0) ||
           ((unsigned long) (old_size) >= MINSIZE &&
            prev_inuse (old_top) &&
