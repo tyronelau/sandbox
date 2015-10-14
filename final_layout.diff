@@ -2130,7 +2130,7 @@ diff -rNu old/lib/CodeGen/RecordLayoutDump.cpp new/lib/CodeGen/RecordLayoutDump.
 +  }
 +
 +  doc.LinkEndChild(tu_elem);
-+  assert(doc.SaveFile(ci_.getFrontendOpts().OutputFile));
++  doc.SaveFile(ci_.getFrontendOpts().OutputFile);
 +}
 +
 +void RecordDumpConsumer::HandleTranslationUnit(ASTContext &ctx) {
@@ -2152,7 +2152,7 @@ diff -rNu old/lib/CodeGen/RecordLayoutDump.cpp new/lib/CodeGen/RecordLayoutDump.
 +  }
 +
 +  doc.LinkEndChild(tu_elem);
-+  assert(doc.SaveFile(ci_.getFrontendOpts().OutputFile));
++  doc.SaveFile(ci_.getFrontendOpts().OutputFile);
 +}
 +
 +void RecordDumpConsumer::DumpDeclToXml(Decl *decl, TiXmlElement *e) {
