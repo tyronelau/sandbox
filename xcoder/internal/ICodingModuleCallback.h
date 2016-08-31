@@ -1,0 +1,50 @@
+
+#ifndef _I_CODING_MODULE_CALLBACK_H_
+#define _I_CODING_MODULE_CALLBACK_H_
+
+#ifdef AGORAVOICE_EXPORT
+#define AGORAVOICE_DLLEXPORT HELPER_DLL_EXPORT
+#elif AGORAVOICE_DLL
+#define AGORAVOICE_DLLIMPORT HELPER_DLL_IMPORT
+#else
+#define AGORAVOICE_DLLEXPORT
+#endif
+
+namespace AgoraRTC {
+
+  // Callback class used for recording/playback video file
+  class VCMVideoFileCallback {
+  public:
+    virtual int onDecodeVideo(unsigned int video_ts, unsigned char payload_type, unsigned char* buffer, unsigned int length, unsigned int frame_num) = 0;
+    virtual int onEncodeVideo(unsigned int video_ts, unsigned char payload_type, unsigned char* buffer, unsigned int length) = 0;
+  };
+
+  // Callback class used for recording/playback audio file
+  class ACMAudioFileCallback {
+  public:
+    virtual int onDecodeAudio(unsigned int audio_ts, unsigned char payload_type, unsigned char* buffer, unsigned int length) = 0;
+    virtual int onEncodeAudio(unsigned int audio_ts, unsigned char payload_type, unsigned char* buffer, unsigned int length) = 0;
+  };
+
+  class ICMFile : public VCMVideoFileCallback,
+                  public ACMAudioFileCallback {
+  public:
+    virtual int startAudioRecord() = 0;
+    virtual int startVideoRecord() = 0;
+    virtual int stopAudioRecord() = 0;
+    virtual int stopVideoRecord() = 0;
+    virtual int setVideoRotation(int rotation) = 0;
+  };
+
+  class ICMFileObserver {
+  public:
+    virtual ICMFile* GetICMFileObject(unsigned int uid) = 0;
+    virtual int InsertRawAudioPacket(unsigned int uid, const unsigned char*  payloadData, unsigned short payloadSize,
+      int payload_type, unsigned int timeStamp, unsigned short seqNumber) = 0;
+  };
+
+}
+
+AGORAVOICE_DLLEXPORT int RegisterICMFileObserver(AgoraRTC::ICMFileObserver* observer);
+
+#endif
