@@ -93,7 +93,7 @@ $(DBG_BASE_TARGET): $(DBG_BASE_OBJECTS)
 $(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_XCODER_OBJECTS) \
-		-Llibs -L$(DBG_BIN_PATH) -lbase -lagorartc -lHDACEngine -lfdkaac -lsrs_librtmp -pthread -lpthread
+		-Llibs -L$(DBG_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread
 
 $(RLS_BASE_TARGET): $(RLS_BASE_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -102,7 +102,7 @@ $(RLS_BASE_TARGET): $(RLS_BASE_OBJECTS)
 $(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) $(RLS_STUB_TARGET)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) \
-		-Llibs -L$(RLS_BIN_PATH) -lbase -lagorartc -lHDACEngine -lfdkaac -lsrs_librtmp -pthread -lpthread
+		-Llibs -L$(RLS_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread
 
 debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET)
 	ln -f libs/libHDACEngine.so $(DBG_BIN_PATH)/libHDACEngine.so

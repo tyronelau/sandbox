@@ -256,8 +256,8 @@ public:
         : m_firstInit(true)
         , m_lib(NULL)
         , m_dllName(dllname)
-        , m_pfnCreateAgoraRtcEngine(nullptr)
-		, m_pfnGetAgoraRtcEngineVersion(nullptr)
+        , m_pfnCreateAgoraRtcEngine(NULL)
+		, m_pfnGetAgoraRtcEngineVersion(NULL)
     {
     }
 
@@ -295,8 +295,8 @@ public:
 #endif
             m_lib = NULL;
         }
-        m_pfnCreateAgoraRtcEngine = nullptr;
-		m_pfnGetAgoraRtcEngineVersion = nullptr;
+        m_pfnCreateAgoraRtcEngine = NULL;
+		m_pfnGetAgoraRtcEngineVersion = NULL;
     }
 
     ~RtcEngineLibHelper()
@@ -315,7 +315,7 @@ public:
     }
 	const char* getVersion(int* build)
 	{
-		return m_pfnGetAgoraRtcEngineVersion ? m_pfnGetAgoraRtcEngineVersion(build) : nullptr;
+		return m_pfnGetAgoraRtcEngineVersion ? m_pfnGetAgoraRtcEngineVersion(build) : NULL;
 	}
 private:
     bool m_firstInit;

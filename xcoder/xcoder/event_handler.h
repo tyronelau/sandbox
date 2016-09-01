@@ -1,12 +1,13 @@
 #pragma once
 
-#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <string>
 
 #include "internal/rtc/IAgoraRtcEngine.h"
 #include "internal/rtc/rtc_engine_i.h"
+
+#include "base/atomic.h"
 
 namespace agora {
 namespace recording {
@@ -54,7 +55,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx {
   const std::string channel_name_;
   const bool is_dual_;
 
-  std::atomic<bool> joined_;
+  atomic_bool_t joined_;
   int32_t last_active_ts_;
 
   rtc::IRtcEngineEx *applite_;
@@ -62,7 +63,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx {
   std::unique_ptr<audio_observer> audio_;
   std::unique_ptr<video_observer> video_;
 
-  static std::atomic<bool> s_term_sig_;
+  static atomic_bool_t s_term_sig_;
 
   static const unsigned char kBytesPerSample = 2;
   static const unsigned char kChannels = 1;

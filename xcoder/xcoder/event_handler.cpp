@@ -36,7 +36,7 @@ namespace recording {
 
 using std::string;
 
-std::atomic<bool> event_handler::s_term_sig_;
+atomic_bool_t event_handler::s_term_sig_;
 
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
     const string &channel_name, bool dual)
