@@ -40,4 +40,3 @@ inline std::ostream& safe_log::stream() {
 
 #define SAFE_LOG(level) agora::base::safe_log(__FILE__, __LINE__, \
     agora::base::log_levels::level ## _LOG).stream()
-

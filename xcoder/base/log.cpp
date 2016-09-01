@@ -1,7 +1,10 @@
-#include "log.h"
+#include "base/log.h"
 
-using namespace agora::base;
-
+namespace agora {
+namespace base {
 int log_config::enabled_level = INFO_LOG;
 uint64_t log_config::dropped_count = 0;
 uint32_t log_config::drop_cancel = 10;
+
+}
+}

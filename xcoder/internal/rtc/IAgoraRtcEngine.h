@@ -98,8 +98,8 @@ enum INTERFACE_ID_TYPE
 
 enum WARN_CODE_TYPE
 {
-	WARN_PENDING = 20,
-	WARN_NO_AVAILABLE_CHANNEL = 103,
+  WARN_PENDING = 20,
+  WARN_NO_AVAILABLE_CHANNEL = 103,
     WARN_LOOKUP_CHANNEL_TIMEOUT = 104,
     WARN_LOOKUP_CHANNEL_REJECTED = 105,
     WARN_OPEN_CHANNEL_TIMEOUT = 106,
@@ -137,7 +137,7 @@ enum ERROR_CODE_TYPE
     ERR_INIT_VIDEO = 16,
     ERR_JOIN_CHANNEL_REJECTED = 17,
     ERR_LEAVE_CHANNEL_REJECTED = 18,
-	ERR_ALREADY_IN_USE = 19,
+  ERR_ALREADY_IN_USE = 19,
     ERR_INVALID_VENDOR_KEY = 101,
     ERR_INVALID_CHANNEL_NAME = 102,
     ERR_DYNAMIC_KEY_TIMEOUT = 109,
@@ -172,13 +172,13 @@ enum ERROR_CODE_TYPE
 
 enum LOG_FILTER_TYPE
 {
-	LOG_FILTER_CONSOLE = 0x8000,
+  LOG_FILTER_CONSOLE = 0x8000,
     LOG_FILTER_DEBUG = 0x0800,
     LOG_FILTER_INFO = 0x0001,
     LOG_FILTER_WARN = 0x0002,
     LOG_FILTER_ERROR = 0x0004,
     LOG_FILTER_CRITICAL = 0x0008,
-	LOG_FILTER_MASK = 0x880f,
+  LOG_FILTER_MASK = 0x880f,
 };
 
 enum MAX_DEVICE_ID_LENGTH_TYPE
@@ -258,8 +258,8 @@ enum VIDEO_PROFILE_TYPE
     VIDEO_PROFILE_480P_4 = 43,        // 640x480   30   1000
     VIDEO_PROFILE_480P_5 = 44,        // 480x640   30   1000
     VIDEO_PROFILE_480P_6 = 45,        // 480x480   30   800
-	VIDEO_PROFILE_480P_7 = 46,		// 640x480 15 1000
-	VIDEO_PROFILE_720P = 50,        // 1280x720  15   1000
+  VIDEO_PROFILE_480P_7 = 46,    // 640x480 15 1000
+  VIDEO_PROFILE_720P = 50,        // 1280x720  15   1000
     VIDEO_PROFILE_720P_2 = 51,        // 720x1280  15   1000
     VIDEO_PROFILE_720P_3 = 52,        // 1280x720  30   2000
     VIDEO_PROFILE_720P_4 = 53,        // 720x1280  30   2000
@@ -278,8 +278,8 @@ enum VIDEO_PROFILE_TYPE
 
 enum APPLICATION_CATEGORY_TYPE
 {
-	APPLICATION_CATEGORY_COMMUNICATION = 0,
-	APPLICATION_CATEGORY_LIVE_BROADCASTING = 1,
+  APPLICATION_CATEGORY_COMMUNICATION = 0,
+  APPLICATION_CATEGORY_LIVE_BROADCASTING = 1,
 };
 
 enum CLIENT_ROLE_TYPE
@@ -333,10 +333,10 @@ struct RemoteVideoStats
 {
     uid_t uid;
     int delay;
-	int width;
-	int height;
-	int receivedBitrate;
-	int receivedFrameRate;
+  int width;
+  int height;
+  int receivedBitrate;
+  int receivedFrameRate;
     REMOTE_VIDEO_STREAM_TYPE rxStreamType;
 };
 
@@ -369,43 +369,43 @@ class IPacketObserver
 {
 public:
 
-	struct Packet
-	{
-		const unsigned char* buffer;
-		unsigned int size;
-	};
-	/**
-	* called by sdk before the audio packet is sent to other participants
-	* @param [in,out] packet:
-	*      buffer *buffer points the data to be sent
-	*      size of buffer data to be sent
-	* @return returns true to send out the packet, returns false to discard the packet
-	*/
-	virtual bool onSendAudioPacket(Packet& packet) = 0;
-	/**
-	* called by sdk before the video packet is sent to other participants
-	* @param [in,out] packet:
-	*      buffer *buffer points the data to be sent
-	*      size of buffer data to be sent
-	* @return returns true to send out the packet, returns false to discard the packet
-	*/
-	virtual bool onSendVideoPacket(Packet& packet) = 0;
-	/**
-	* called by sdk when the audio packet is received from other participants
-	* @param [in,out] packet
-	*      buffer *buffer points the data to be sent
-	*      size of buffer data to be sent
-	* @return returns true to process the packet, returns false to discard the packet
-	*/
-	virtual bool onReceiveAudioPacket(Packet& packet) = 0;
-	/**
-	* called by sdk when the video packet is received from other participants
-	* @param [in,out] packet
-	*      buffer *buffer points the data to be sent
-	*      size of buffer data to be sent
-	* @return returns true to process the packet, returns false to discard the packet
-	*/
-	virtual bool onReceiveVideoPacket(Packet& packet) = 0;
+  struct Packet
+  {
+    const unsigned char* buffer;
+    unsigned int size;
+  };
+  /**
+  * called by sdk before the audio packet is sent to other participants
+  * @param [in,out] packet:
+  *      buffer *buffer points the data to be sent
+  *      size of buffer data to be sent
+  * @return returns true to send out the packet, returns false to discard the packet
+  */
+  virtual bool onSendAudioPacket(Packet& packet) = 0;
+  /**
+  * called by sdk before the video packet is sent to other participants
+  * @param [in,out] packet:
+  *      buffer *buffer points the data to be sent
+  *      size of buffer data to be sent
+  * @return returns true to send out the packet, returns false to discard the packet
+  */
+  virtual bool onSendVideoPacket(Packet& packet) = 0;
+  /**
+  * called by sdk when the audio packet is received from other participants
+  * @param [in,out] packet
+  *      buffer *buffer points the data to be sent
+  *      size of buffer data to be sent
+  * @return returns true to process the packet, returns false to discard the packet
+  */
+  virtual bool onReceiveAudioPacket(Packet& packet) = 0;
+  /**
+  * called by sdk when the video packet is received from other participants
+  * @param [in,out] packet
+  *      buffer *buffer points the data to be sent
+  *      size of buffer data to be sent
+  * @return returns true to process the packet, returns false to discard the packet
+  */
+  virtual bool onReceiveVideoPacket(Packet& packet) = 0;
 };
 
 
@@ -675,19 +675,19 @@ public:
         (void)muted;
     }
 
-	/**
-	* when remote user enable video function, the function will be called
-	* @param [in] uid
-	*        the UID of the remote user
-	* @param [in] enabled
-	*        true: the remote user has enabled video function, false: the remote user has disabled video function
-	*/
-	virtual void onUserEnableVideo(uid_t uid, bool enabled) {
-		(void)uid;
-		(void)enabled;
-	}
-	
-	/**
+  /**
+  * when remote user enable video function, the function will be called
+  * @param [in] uid
+  *        the UID of the remote user
+  * @param [in] enabled
+  *        true: the remote user has enabled video function, false: the remote user has disabled video function
+  */
+  virtual void onUserEnableVideo(uid_t uid, bool enabled) {
+    (void)uid;
+    (void)enabled;
+  }
+  
+  /**
     * when api call executed completely, the function will be called
     * @param [in] api
     *        the api name
@@ -700,21 +700,21 @@ public:
     }
 
     /**
-	* reported local video stats
-	* @param [in] stats
+  * reported local video stats
+  * @param [in] stats
     *        the latest local video stats
     */
-	virtual void onLocalVideoStats(const LocalVideoStats& stats) {
-		(void)stats;
+  virtual void onLocalVideoStats(const LocalVideoStats& stats) {
+    (void)stats;
     }
 
     /**
     * reported remote video stats
     * @param [in] stats
-	*        the latest remote video stats
-	*/
-	virtual void onRemoteVideoStats(const RemoteVideoStats& stats) {
-		(void)stats;
+  *        the latest remote video stats
+  */
+  virtual void onRemoteVideoStats(const RemoteVideoStats& stats) {
+    (void)stats;
     }
 
     /**
@@ -978,7 +978,7 @@ struct RtcEngineContext
 {
     IRtcEngineEventHandler* eventHandler;
     const char* vendorKey;
-	APPLICATION_CATEGORY_TYPE applicationCategory;
+  APPLICATION_CATEGORY_TYPE applicationCategory;
     RtcEngineContext()
     :eventHandler(NULL)
     ,vendorKey(NULL)
@@ -1143,15 +1143,15 @@ public:
     */
     virtual int registerPacketObserver(IPacketObserver* observer) = 0;
 
-	virtual int setVideoRenderFactory(void* factory) = 0;
+  virtual int setVideoRenderFactory(void* factory) = 0;
 
-	/**
-	* Specifying encryption secret enables built-in AES-128 encryption. Leaving channel will clear the secret specified in last channel
-	* @param [in] secret
-	*        secret to enable encryption
-	* @return return 0 if success or an error code
-	*/
-	virtual int setEncryptionSecret(const char* secret) = 0;
+  /**
+  * Specifying encryption secret enables built-in AES-128 encryption. Leaving channel will clear the secret specified in last channel
+  * @param [in] secret
+  *        secret to enable encryption
+  * @return return 0 if success or an error code
+  */
+  virtual int setEncryptionSecret(const char* secret) = 0;
 };
 
 
@@ -1311,7 +1311,7 @@ public:
     */
     virtual int setProfile(const char* profile, bool merge) = 0;
 
-	virtual int convertPath(const char* filePath, agora::util::AString& value) = 0;
+  virtual int convertPath(const char* filePath, agora::util::AString& value) = 0;
 };
 
 class AAudioDeviceManager : public agora::util::AutoPtr<IAudioDeviceManager>
@@ -1464,13 +1464,13 @@ public:
     */
     int startAudioRecording(const char* filePath) {
 #if defined(_WIN32)
-		util::AString path;
-		if (!m_parameter->convertPath(filePath, path))
-			filePath = path->c_str();
-		else
-			return -ERR_INVALID_ARGUMENT;
+    util::AString path;
+    if (!m_parameter->convertPath(filePath, path))
+      filePath = path->c_str();
+    else
+      return -ERR_INVALID_ARGUMENT;
 #endif
-		return m_parameter->setString("che.audio.start_recording", filePath);
+    return m_parameter->setString("che.audio.start_recording", filePath);
     }
 
     /**
@@ -1481,52 +1481,52 @@ public:
         return m_parameter->setBool("che.audio.stop_recording", true);
     }
 
-	/**
-	* mix microphone and local audio file into the audio stream
-	* @param [in] filePath
-	*        specify the path and file name of the audio file to be played
-	* @param [in] loopback
-	*        specify if local and remote participant can hear the audio file.
-	*        false (default): both local and remote party can hear the the audio file
-	*        true: only the local party can hear the audio file
-	* @param [in] replace
-	*        false (default): mix the local microphone captured voice with the audio file
-	*        true: replace the microphone captured voice with the audio file
-	* @param [in] cycle
-	*        specify the number of cycles to play
-	*        -1, infinite loop playback
-	* @return return 0 if success or an error code
-	*/
-	int startAudioMixing(const char* filePath, bool loopback, bool replace, int cycle) {
+  /**
+  * mix microphone and local audio file into the audio stream
+  * @param [in] filePath
+  *        specify the path and file name of the audio file to be played
+  * @param [in] loopback
+  *        specify if local and remote participant can hear the audio file.
+  *        false (default): both local and remote party can hear the the audio file
+  *        true: only the local party can hear the audio file
+  * @param [in] replace
+  *        false (default): mix the local microphone captured voice with the audio file
+  *        true: replace the microphone captured voice with the audio file
+  * @param [in] cycle
+  *        specify the number of cycles to play
+  *        -1, infinite loop playback
+  * @return return 0 if success or an error code
+  */
+  int startAudioMixing(const char* filePath, bool loopback, bool replace, int cycle) {
 #if defined(_WIN32)
-		util::AString path;
-		if (!m_parameter->convertPath(filePath, path))
-			filePath = path->c_str();
-		else
-			return -ERR_INVALID_ARGUMENT;
+    util::AString path;
+    if (!m_parameter->convertPath(filePath, path))
+      filePath = path->c_str();
+    else
+      return -ERR_INVALID_ARGUMENT;
 #endif
-		return setObject("che.audio.start_file_as_playout", "{\"filePath\":\"%s\",\"loopback\":%s,\"replace\":%s,\"cycle\":%d}",
-					filePath,
-					loopback?"true":"false",
-					replace?"true":"false",
-					cycle);
-	}
-	/**
-	* stop mixing the local audio stream
-	* @return return 0 if success or an error code
-	*/
-	int stopAudioMixing() {
-		return m_parameter->setBool("che.audio.stop_file_as_playout", true);
-	}
+    return setObject("che.audio.start_file_as_playout", "{\"filePath\":\"%s\",\"loopback\":%s,\"replace\":%s,\"cycle\":%d}",
+          filePath,
+          loopback?"true":"false",
+          replace?"true":"false",
+          cycle);
+  }
+  /**
+  * stop mixing the local audio stream
+  * @return return 0 if success or an error code
+  */
+  int stopAudioMixing() {
+    return m_parameter->setBool("che.audio.stop_file_as_playout", true);
+  }
 
 #if defined(__APPLE__)
-	/**
-	* start screen capture
-	* @return return 0 if success or an error code
-	*/
-	int startScreenCapture(unsigned int windowId) {
-		return m_parameter->setUInt("che.video.start_screen_capture", windowId);
-	}
+  /**
+  * start screen capture
+  * @return return 0 if success or an error code
+  */
+  int startScreenCapture(unsigned int windowId) {
+    return m_parameter->setUInt("che.video.start_screen_capture", windowId);
+  }
 
     /**
      * specify window id to capture
@@ -1577,13 +1577,13 @@ public:
     */
     int setLogFile(const char* filePath) {
 #if defined(_WIN32)
-		util::AString path;
-		if (!m_parameter->convertPath(filePath, path))
-			filePath = path->c_str();
-		else if (!filePath)
-			filePath = "";
+    util::AString path;
+    if (!m_parameter->convertPath(filePath, path))
+      filePath = path->c_str();
+    else if (!filePath)
+      filePath = "";
 #endif
-		return m_parameter->setString("rtc.log_file", filePath);
+    return m_parameter->setString("rtc.log_file", filePath);
     }
 
     /**
@@ -1593,7 +1593,7 @@ public:
     * @return return 0 if success or an error code
     */
     int setLogFilter(unsigned int filter) {
-		return m_parameter->setUInt("rtc.log_filter", filter&LOG_FILTER_MASK);
+    return m_parameter->setUInt("rtc.log_filter", filter&LOG_FILTER_MASK);
     }
 
     /**
@@ -1616,8 +1616,8 @@ public:
         return setObject("che.video.render_mode", "{\"uid\":%u,\"mode\":%d}", uid, renderMode);
     }
     
-	int startRecordingService(const char* key) {
-		return m_parameter->setString("rtc.api.start_recording_service", key);
+  int startRecordingService(const char* key) {
+    return m_parameter->setString("rtc.api.start_recording_service", key);
     }
     
     int stopRecordingService(const char* key) {
