@@ -1,7 +1,10 @@
 #pragma once
 
+#include <thread>
+
 #include "include/xcodec_interface.h"
 
+#include "base/async_pipe.h"
 #include "base/process.h"
 
 namespace agora {
@@ -21,12 +24,18 @@ class RecorderImpl : public Recorder {
   virtual int LeaveChannel();
   virtual int Destroy();
  private:
+  int run_internal();
+ private:
+  std::thread thread_;
+
   async_pipe_reader *reader_;
   async_pipe_writer *writer_;
 
   base::process process_;
 
   bool joined_;
+  bool stopped_;
+
   RecorderCallback *callback_;
 };
 

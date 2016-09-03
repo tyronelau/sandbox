@@ -80,7 +80,15 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
 
   reader_ = new (std::nothrow)async_pipe_reader(fds[0]);
   writer_ = new (std::nothrow)async_pipe_writer(fds[1]);
+
+  thread_ = std::thread(&RecorderImpl::run_internal, this);
   return 0;
+}
+
+int RecorderImpl::run_internal() {
+  while (!stopped_) {
+
+  }
 }
 
 }
