@@ -7,7 +7,8 @@ typedef std::atomic<bool> atomic_bool_t;
 
 #else
 namespace agora {
-namespace pstn {
+namespace base {
+
 template <typename T> class atomic;
 
 template <>
@@ -59,8 +60,7 @@ inline void atomic<bool>::store(bool value) {
 }
 }
 
-typedef agora::pstn::atomic<bool> atomic_bool_t;
+typedef agora::base::atomic<bool> atomic_bool_t;
 
 #endif
 #endif
-
