@@ -18,7 +18,7 @@ class NewSmthSession(object):
           urllib2.HTTPCookieProcessor(self.cookie))
     else:
       self.opener=urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
-      
+
     self.opener.addheaders = [('User-agent', "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1;"
        " .NET CLR 2.0.50727; .NET CLR 3.0.04506.648; .NET CLR 3.5.21022;"
        " .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729; InfoPath.1;"
@@ -30,7 +30,7 @@ class NewSmthSession(object):
     else:
       self.login_url="http://www.newsmth.net/bbslogin.php"
       self.logout_url="http://www.newsmth.net/bbslogout.php"
-      
+
     return
 
   def set_proxy(self, proxy):
@@ -42,7 +42,7 @@ class NewSmthSession(object):
     else:
       self.opener=urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookie))
     return
-  
+
   def login(self):
     try:
       post_data=urllib.urlencode([('id',self.user),('passwd', self.password)])
@@ -76,7 +76,7 @@ class NewSmthSession(object):
      print >>sys.stderr, "Error: %s" %(str(e))
      return False
     return True
-    
+
   def queryScore(self, user):
     query_url = "http://www.newsmth.net/bbsqry.php?userid=%s" %user
     try:
@@ -109,7 +109,7 @@ class NewSmthSession(object):
 ##    article_id=str(article_id)
 ##    url='http://www.2.newsmth.net/bbsedit.php?board='+board+'&id='+article_id+'&ftype=0'##&do'
 ##    print '....to modify:', url
-##    
+##
 ##    try:
 ##      ##first: we try to read the article to find the original author.
 ##      ##original_url="http://www.2.newsmth.net/bbscon.php?bid=%d&id=%d" %(board_id, article_id)
@@ -120,11 +120,11 @@ class NewSmthSession(object):
 ##
 ##      title=parser.first("input", {"name":"title"})
 ##      article_title=title.get("value")
-##      article_title=article_title.encode("gbk","replace")    
+##      article_title=article_title.encode("gbk","replace")
 ##      if need_check and re.match(TITLE_PATTERN, article_title):
 ##        print "Already Handled...", article_title
 ##        return True
-##      
+##
 ##      content=parser.first("textarea")
 ##      article=content.string
 ##      m=re.search(ARTICLE_AUTHOR_PATTERN, article)
@@ -166,7 +166,7 @@ class NewSmthSession(object):
         title=title.encode("gbk", "replace")
       if type(content)==unicode:
         content=content.encode("gbk", "replace")
-      
+
       post_data=[('title',title),('attachname',''), ('signature', "%d" %qmd),
             ('text',content)
            ]

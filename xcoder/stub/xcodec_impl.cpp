@@ -28,6 +28,9 @@ RecorderImpl::~RecorderImpl() {
   if (writer_) {
     delete writer_;
   }
+
+  process_.stop();
+  process_.wait();
 }
 
 int RecorderImpl::JoinChannel(const char *vendor_key,
@@ -78,17 +81,28 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
 
   process_.swap(p);
 
-  reader_ = new (std::nothrow)async_pipe_reader(fds[0]);
-  writer_ = new (std::nothrow)async_pipe_writer(fds[1]);
+  reader_ = new (std::nothrow)async_pipe_reader(&loop_, fds[0], this);
+  writer_ = new (std::nothrow)async_pipe_writer(&loop_, fds[1], this);
 
   thread_ = std::thread(&RecorderImpl::run_internal, this);
   return 0;
 }
 
 int RecorderImpl::run_internal() {
-  while (!stopped_) {
+  return loop_.run();
+}
 
+int RecorderImpl::LeaveChannel() {
+  return leave_channel();
+}
+
+int RecorderImpl::leave_channel() {
+  if (writer_) {
+    protocol::leave_packet pkt;
+    writer_->write_packet(pkt);
   }
+
+  thread_.join();
 }
 
 }

@@ -25,8 +25,10 @@ class RecorderImpl : public Recorder {
   virtual int Destroy();
  private:
   int run_internal();
+  int leave_channel();
  private:
   std::thread thread_;
+  base::event_loop loop_;
 
   async_pipe_reader *reader_;
   async_pipe_writer *writer_;
