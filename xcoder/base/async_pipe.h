@@ -63,7 +63,16 @@ class async_pipe_writer {
   bool is_closed() const;
   bool write_packet(const packet &p);
  private:
-  static void write_callback(int fd, short events, void *context);
+  void enable_write_callback();
+  void disable_write_callback();
+  void remove_callback();
+
+  void on_write();
+  void on_error();
+  void destroy();
+
+  static void write_callback(int fd, void *context);
+  static void error_callback(int fd, void *context);
  private:
   event_loop *loop_;
 
@@ -71,7 +80,7 @@ class async_pipe_writer {
   FILE *fp_;
 
   size_t written_;
-  packet_common_header *packet_;
+  const packet_common_header *packet_;
   pipe_write_listener *listener_;
 
   bool closed_;

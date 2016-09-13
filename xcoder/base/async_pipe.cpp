@@ -1,5 +1,7 @@
 #include "base/async_pipe.h"
 
+#include <cassert>
+
 #include "base/event_loop.h"
 
 namespace agora {
@@ -151,16 +153,17 @@ bool async_pipe_writer::write_packet(const packet &p) {
     return true;
   }
 
+  static const size_t kMaxPendingSize = 10 * 1024 * 1024;
+  if (total_size_ + p.size() > kMaxPendingSize) {
+    return false;
+  }
+
   pending_packets_.push_back(p);
   return false;
 }
 
 bool async_pipe_writer::on_write() {
-  // FIXME
-  static const size_t kMaxPendingSize = 10 * 1024 * 1024;
-  if (total_size_ + p.size() > kMaxPendingSize) {
-    return false;
-  }
+  writable_ = true;
 
   while (writable_ && packet_) {
     if (written_ < packet_->size) {
@@ -171,8 +174,6 @@ bool async_pipe_writer::on_write() {
 
       if (n < towrite) {
         writable_ = false;
-        // FIXME(liuyong): Ready to reschedule next event
-        setup_callback();
         break;
       }
     }
@@ -182,11 +183,33 @@ bool async_pipe_writer::on_write() {
       packet_ = pending_packets_.front();
       pending_packets_.pop_front();
       written_ = 0;
+    } else {
+      packet_ = NULL;
     }
+  }
+
+  if (writable_ && !packet_) {
+    disable_write_callback();
+  } else if (!writable_) {
+    assert(packet_ != NULL);
+    enable_write_callback();
   }
 
   fflush(fp_);
   return true;
+}
+
+void async_pipe_writer::write_callback(int fd, short events, void *context) {
+  async_pipe_writer *writer = reinterpret_cast<async_pipe_writer *>(context);
+  writer->on_write();
+}
+
+void async_pipe_writer::disable_write_callback() {
+  loop_->add_watcher(pipe_fd_, this, NULL, NULL, &error_callback);
+}
+
+void async_pipe_writer::enable_write_callback() {
+  loop_->add_watcher(pipe_fd_, this, NULL, &write_callback, &error_callback);
 }
 
 }
