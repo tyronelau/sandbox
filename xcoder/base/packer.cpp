@@ -185,112 +185,111 @@ void unpacker::rewind() {
   position_ = sizeof(length_);
 }
 
-void write(uint16_t val, uint16_t position) {
+void unpacker::write(uint16_t val, uint32_t position) {
   check_size(sizeof(val), position);
   ::memcpy(buffer_ + position, &val, sizeof(val));
 }
 
-uint64_t pop_uint64() {
+uint64_t unpacker::pop_uint64() {
   uint64_t v = 0;
   check_size(sizeof(v), position_);
   ::memcpy(&v, buffer_ + position_, sizeof(v));
-  position_ = static_cast<uint16_t>(position_ + sizeof(v));
+  position_ = static_cast<uint32_t>(position_ + sizeof(v));
   return v;
 }
 
-uint32_t pop_uint32() {
+uint32_t unpacker::pop_uint32() {
   uint32_t v = 0;
   check_size(sizeof(v), position_);
   ::memcpy(&v, buffer_ + position_, sizeof(v));
-  position_ = static_cast<uint16_t>(position_ + sizeof(v));
+  position_ = static_cast<uint32_t>(position_ + sizeof(v));
   return v;
 }
 
-uint16_t pop_uint16() {
+uint16_t unpacker::pop_uint16() {
   uint16_t v = 0;
   check_size(sizeof(v), position_);
   ::memcpy(&v, buffer_ + position_, sizeof(v));
-  position_ = static_cast<uint16_t>(position_ + sizeof(v));
+  position_ = static_cast<uint32_t>(position_ + sizeof(v));
   return v;
 }
 
-uint8_t  pop_uint8() {
+uint8_t unpacker::pop_uint8() {
   uint8_t v = 0;
   check_size(sizeof(v), position_);
   ::memcpy(&v, buffer_ + position_, sizeof(v));
-  position_ = static_cast<uint16_t>(position_ + sizeof(v));
+  position_ = static_cast<uint32_t>(position_ + sizeof(v));
   return v;
 }
 
-std::string  pop_string() {
-  uint16_t length = pop_uint16();
+std::string unpacker::pop_string() {
+  uint32_t length = pop_uint32();
   check_size(length, position_);
+
   std::string s = std::string(buffer_ + position_, length);
-  position_ = static_cast<uint16_t>(position_ + length);
+  position_ = static_cast<uint32_t>(position_ + length);
 
   return s;
 }
 
-const char*  buffer() const {
+const char* unpacker::buffer() const {
   return buffer_;
 }
 
-size_t length() const {
+size_t unpacker::length() const {
   return length_;
 }
 
-void check_size(size_t more, uint16_t position) const {
+void unpacker::check_size(size_t more, uint32_t position) const {
   if (static_cast<size_t>(length_ - position) < more) {
     throw std::overflow_error("unpacker buffer overflow!");
   }
 }
 
-unpacker& operator>> (uint64_t & v)
-{
-  v = pop_uint64();
-  return *this;
+unpacker& operator>>(unpacker &unpkr, uint64_t &v) {
+  v = unpkr.pop_uint64();
+  return unpkr;
 }
 
-unpacker& operator>> (uint32_t & v)
-{
-  v = pop_uint32();
-  return *this;
-}
-unpacker& operator>> (uint16_t & v)
-{
-  v = pop_uint16();
-  return *this;
-}
-unpacker& operator>> (uint8_t & v)
-{
-  v = pop_uint8();
-  return *this;
+unpacker& operator>>(unpacker &unpkr, uint32_t &v) {
+  v = unpkr.pop_uint32();
+  return unpkr;
 }
 
-unpacker& operator>> (int64_t & v)
-{
-  v = static_cast<int64_t>(pop_uint64());
-  return *this;
+unpacker& operator>>(unpacker &unpkr, uint16_t &v) {
+  v = unpkr.pop_uint16();
+  return unpkr;
 }
-unpacker& operator>> (int32_t & v)
-{
-  v = static_cast<int32_t>(pop_uint32());
-  return *this;
+
+unpacker& operator>>(unpacker &unpkr, uint8_t &v) {
+  v = unpkr.pop_uint8();
+  return unpkr;
 }
-unpacker& operator>> (int16_t & v)
-{
-  v = static_cast<int16_t>(pop_uint16());
-  return *this;
+
+unpacker& operator>>(unpacker &unpkr, int64_t &v) {
+  v = static_cast<int64_t>(unpkr.pop_uint64());
+  return unpkr;
 }
-unpacker& operator>> (int8_t & v)
-{
-  v = static_cast<int8_t>(pop_uint8());
-  return *this;
+
+unpacker& operator>>(unpacker &unpkr, int32_t &v) {
+  v = static_cast<int32_t>(unpkr.pop_uint32());
+  return unpkr;
 }
-unpacker& operator>> (std::string & v)
-{
-  v = pop_string();
-  return *this;
+
+unpacker& operator>>(unpacker &unpkr, int16_t &v) {
+  v = static_cast<int16_t>(unpkr.pop_uint16());
+  return unpkr;
 }
+
+unpacker& operator>>(unpacker &unpkr, int8_t &v) {
+  v = static_cast<int8_t>(unpkr.pop_uint8());
+  return unpkr;
+}
+
+unpacker& operator>>(unpacker &unpkr, std::string &v) {
+  v = unpkr.pop_string();
+  return unpkr;
+}
+
 }
 }

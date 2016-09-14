@@ -37,7 +37,6 @@ class packer {
   void push(int16_t val);
   void push(uint8_t val);
   void push(int8_t val);
-
   void push(const std::string &val);
 
   void check_size(size_t more, uint32_t position);
@@ -98,143 +97,20 @@ class unpacker {
 
   ~unpacker();
  public:
-  void rewind() {
-    position_ = 2;
-  }
+  const char*  buffer() const;
+  size_t length() const;
+  void check_size(size_t more, uint32_t position) const;
 
-  void write(uint16_t val, uint16_t position) {
-    check_size(sizeof(val), position);
-    ::memcpy(buffer_ + position, &val, sizeof(val));
-  }
+  void rewind();
 
-  uint64_t pop_uint64() {
-    uint64_t v = 0;
-    check_size(sizeof(v), position_);
-    ::memcpy(&v, buffer_ + position_, sizeof(v));
-    position_ = static_cast<uint16_t>(position_ + sizeof(v));
-    return v;
-  }
+  void write(uint16_t val, uint32_t position);
 
-  uint32_t pop_uint32() {
-    uint32_t v = 0;
-    check_size(sizeof(v), position_);
-    ::memcpy(&v, buffer_ + position_, sizeof(v));
-    position_ = static_cast<uint16_t>(position_ + sizeof(v));
-    return v;
-  }
+  uint64_t pop_uint64();
+  uint32_t pop_uint32();
+  uint16_t pop_uint16();
+  uint8_t pop_uint8();
 
-  uint16_t pop_uint16() {
-    uint16_t v = 0;
-    check_size(sizeof(v), position_);
-    ::memcpy(&v, buffer_ + position_, sizeof(v));
-    position_ = static_cast<uint16_t>(position_ + sizeof(v));
-    return v;
-  }
-
-  uint8_t  pop_uint8() {
-    uint8_t v = 0;
-    check_size(sizeof(v), position_);
-    ::memcpy(&v, buffer_ + position_, sizeof(v));
-    position_ = static_cast<uint16_t>(position_ + sizeof(v));
-    return v;
-  }
-
-  std::string  pop_string() {
-    uint16_t length = pop_uint16();
-    check_size(length, position_);
-    std::string s = std::string(buffer_ + position_, length);
-    position_ = static_cast<uint16_t>(position_ + length);
-
-    return s;
-  }
-
-  const char*  buffer() const {
-    return buffer_;
-  }
-
-  size_t length() const {
-    return length_;
-  }
-
-  void check_size(size_t more, uint16_t position) const {
-    if (static_cast<size_t>(length_ - position) < more) {
-      throw std::overflow_error("unpacker buffer overflow!");
-    }
-  }
-
-  unpacker& operator>> (uint64_t & v)
-  {
-    v = pop_uint64();
-    return *this;
-  }
-
-  unpacker& operator>> (uint32_t & v)
-  {
-    v = pop_uint32();
-    return *this;
-  }
-  unpacker& operator>> (uint16_t & v)
-  {
-    v = pop_uint16();
-    return *this;
-  }
-  unpacker& operator>> (uint8_t & v)
-  {
-    v = pop_uint8();
-    return *this;
-  }
-
-  unpacker& operator>> (int64_t & v)
-  {
-    v = static_cast<int64_t>(pop_uint64());
-    return *this;
-  }
-  unpacker& operator>> (int32_t & v)
-  {
-    v = static_cast<int32_t>(pop_uint32());
-    return *this;
-  }
-  unpacker& operator>> (int16_t & v)
-  {
-    v = static_cast<int16_t>(pop_uint16());
-    return *this;
-  }
-  unpacker& operator>> (int8_t & v)
-  {
-    v = static_cast<int8_t>(pop_uint8());
-    return *this;
-  }
-  unpacker& operator>> (std::string & v)
-  {
-    v = pop_string();
-    return *this;
-  }
-  template<typename T>
-  unpacker& operator>> (std::vector<T> &v)
-  {
-    uint16_t count = pop_uint16();
-    for (uint16_t i = 0; i < count; i++)
-    {
-      T t;
-      *this >> t;
-      v.push_back(t);
-    }
-    return *this;
-  }
-
-  template<typename K, typename V>
-  unpacker& operator>> (std::map<K, V> & x)
-  {
-    uint16_t count = pop_uint16();
-    for (uint16_t i = 0; i < count; i++)
-    {
-      K k;
-      V v;
-      *this >> k >> v;
-      x.insert(std::make_pair(k, v));
-    }
-    return *this;
-  }
+  std::string pop_string();
  private:
   const char *buffer_;
   uint32_t length_;
@@ -242,32 +118,74 @@ class unpacker {
   bool copy_;
 };
 
-#define DECLARE_PACKABLE_1_START(name,type1,name1) DECLARE_STRUCT_1_START(name,type1,name1) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_1(name,type1,name1) DECLARE_PACKABLE_1_START(name,type1,name1) \
+unpacker& operator>>(unpacker &unpkr, uint64_t &v);
+unpacker& operator>>(unpacker &unpkr, uint32_t &v);
+unpacker& operator>>(unpacker &unpkr, uint16_t &v);
+unpacker& operator>>(unpacker &unpkr, uint8_t &v);
+unpacker& operator>>(unpacker &unpkr, int64_t &v);
+unpacker& operator>>(unpacker &unpkr, int32_t &v);
+unpacker& operator>>(unpacker &unpkr, int16_t &v);
+unpacker& operator>>(unpacker &unpkr, int8_t &v);
+unpacker& operator>>(unpacker &unpkr, std::string &v);
+
+template<typename T>
+unpacker& operator>>(unpacker &unpkr, std::vector<T> &v) {
+  uint32_t count = unpkr.pop_uint32();
+  v.reserve(count);
+
+  for (uint32_t i = 0; i < count; ++i) {
+    T t;
+    unpkr >> t;
+    v.push_back(std::move(t));
+  }
+
+  return unpkr;
+}
+
+template<typename K, typename V>
+unpacker& operator>>(unpacker &unpkr, std::map<K, V> &x) {
+  uint32_t count = unpkr.pop_uint32();
+
+  for (uint32_t i = 0; i < count; ++i) {
+    K k;
+    V v;
+    unpkr >> k >> v;
+    x.insert(std::make_pair(std::move(k), std::move(v)));
+  }
+
+  return unpkr;
+}
+
+#define DECLARE_PACKABLE_1_START(name, type1, name1) \
+  DECLARE_STRUCT_1_START(name, type1, name1) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1; \
+      return p; \
+  }
+
+#define DECLARE_PACKABLE_1(name, type1, name1) \
+  DECLARE_PACKABLE_1_START(name, type1, name1) \
   DECLARE_STRUCT_END
-#define DECLARE_PACKABLE_2_START(name,type1,name1,type2,name2) DECLARE_STRUCT_2_START(name,type1,name1,type2,name2) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_2(name,type1,name1,type2,name2) DECLARE_PACKABLE_2_START(name,type1,name1,type2,name2) \
+
+#define DECLARE_PACKABLE_2_START(name, type1, name1, type2, name2) \
+  DECLARE_STRUCT_2_START(name, type1, name1, type2, name2) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2; \
+    return p; \
+  }
+
+#define DECLARE_PACKABLE_2(name, type1, name1, type2, name2) \
+  DECLARE_PACKABLE_2_START(name, type1, name1, type2, name2) \
   DECLARE_STRUCT_END
+
 #define DECLARE_PACKABLE_3_START(name,type1,name1,type2,name2,type3,name3) DECLARE_STRUCT_3_START(name,type1,name1,type2,name2,type3,name3) \
     friend packer & operator<< (packer& p, const name & x) \
     {  \
