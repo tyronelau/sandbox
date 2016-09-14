@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "base/declare_struct.h"
@@ -164,7 +165,7 @@ unpacker& operator>>(unpacker &unpkr, std::map<K, V> &x) {
   } \
   friend unpacker& operator>>(unpacker &p, name &x) { \
     p >> x.name1; \
-      return p; \
+    return p; \
   }
 
 #define DECLARE_PACKABLE_1(name, type1, name1) \
