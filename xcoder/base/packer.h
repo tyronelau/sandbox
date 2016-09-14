@@ -157,6 +157,9 @@ unpacker& operator>>(unpacker &unpkr, std::map<K, V> &x) {
   return unpkr;
 }
 
+}
+}
+
 #define DECLARE_PACKABLE_1_START(name, type1, name1) \
   DECLARE_STRUCT_1_START(name, type1, name1) \
   friend packer& operator<<(packer &p, const name &x) { \
@@ -187,96 +190,143 @@ unpacker& operator>>(unpacker &unpkr, std::map<K, V> &x) {
   DECLARE_PACKABLE_2_START(name, type1, name1, type2, name2) \
   DECLARE_STRUCT_END
 
-#define DECLARE_PACKABLE_3_START(name,type1,name1,type2,name2,type3,name3) DECLARE_STRUCT_3_START(name,type1,name1,type2,name2,type3,name3) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2 << x.name3; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2 >> x.name3; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_3(name,type1,name1,type2,name2,type3,name3) DECLARE_PACKABLE_3_START(name,type1,name1,type2,name2,type3,name3) \
-  DECLARE_STRUCT_END
-#define DECLARE_PACKABLE_4_START(name,type1,name1,type2,name2,type3,name3,type4,name4) DECLARE_STRUCT_4_START(name,type1,name1,type2,name2,type3,name3,type4,name4) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2 << x.name3 << x.name4; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2 >> x.name3 >> x.name4; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_4(name,type1,name1,type2,name2,type3,name3,type4,name4) DECLARE_PACKABLE_4_START(name,type1,name1,type2,name2,type3,name3,type4,name4) \
-  DECLARE_STRUCT_END
-#define DECLARE_PACKABLE_5_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5) DECLARE_STRUCT_5_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_5(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5) DECLARE_PACKABLE_5_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5) \
-  DECLARE_STRUCT_END
-#define DECLARE_PACKABLE_6_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6) DECLARE_STRUCT_6_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 << x.name6; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 >> x.name6; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_6(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6) DECLARE_PACKABLE_6_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6) \
-  DECLARE_STRUCT_END
-#define DECLARE_PACKABLE_7_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7) DECLARE_STRUCT_7_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 << x.name6 << x.name7; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 >> x.name6 >> x.name7; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_7(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7) DECLARE_PACKABLE_7_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7) \
-  DECLARE_STRUCT_END
-#define DECLARE_PACKABLE_8_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8) DECLARE_STRUCT_8_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 << x.name6 << x.name7 << x.name8; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 >> x.name6 >> x.name7 >> x.name8; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_8(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8) DECLARE_PACKABLE_8_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8) \
-  DECLARE_STRUCT_END
-#define DECLARE_PACKABLE_9_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8,type9,name9) DECLARE_STRUCT_9_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8,type9,name9) \
-    friend packer & operator<< (packer& p, const name & x) \
-    {  \
-        p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 << x.name6 << x.name7 << x.name8 << x.name9; \
-        return p;\
-    }\
-    friend unpacker & operator>> (unpacker & p, name & x) \
-    {      \
-      p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 >> x.name6 >> x.name7 >> x.name8 >> x.name9; \
-        return p;\
-    }
-#define DECLARE_PACKABLE_9(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8,type9,name9) DECLARE_PACKABLE_9_START(name,type1,name1,type2,name2,type3,name3,type4,name4,type5,name5,type6,name6,type7,name7,type8,name8,type9,name9) \
+#define DECLARE_PACKABLE_3_START(name, type1, name1, type2, name2, \
+    type3, name3) \
+  DECLARE_STRUCT_3_START(name, type1, name1, type2, name2, type3, name3) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2 << x.name3; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2 >> x.name3; \
+    return p; \
+  }
+
+#define DECLARE_PACKABLE_3(name, type1, name1, type2, name2, type3, name3) \
+  DECLARE_PACKABLE_3_START(name, type1, name1, type2, name2, type3, name3) \
   DECLARE_STRUCT_END
 
-} }
+#define DECLARE_PACKABLE_4_START(name, type1, name1, type2, name2, \
+    type3, name3, type4, name4) \
+  DECLARE_STRUCT_4_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2 << x.name3 << x.name4; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2 >> x.name3 >> x.name4; \
+    return p; \
+  }
+
+#define DECLARE_PACKABLE_4(name, type1, name1, type2, name2, type3, name3, \
+    type4, name4) \
+  DECLARE_PACKABLE_4_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4) \
+  DECLARE_STRUCT_END
+
+#define DECLARE_PACKABLE_5_START(name, type1, name1, type2, name2, \
+    type3, name3, type4, name4, type5, name5) \
+  DECLARE_STRUCT_5_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5; \
+   return p; \
+  }
+
+#define DECLARE_PACKABLE_5(name, type1, name1, type2, name2, type3, name3, \
+    type4, name4, type5, name5) \
+  DECLARE_PACKABLE_5_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5) \
+  DECLARE_STRUCT_END
+
+#define DECLARE_PACKABLE_6_START(name, type1, name1, type2, name2, \
+    type3, name3, type4, name4, type5, name5, type6, name6) \
+  DECLARE_STRUCT_6_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 << x.name6; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 >> x.name6; \
+    return p; \
+  }
+
+#define DECLARE_PACKABLE_6(name, type1, name1, type2, name2, type3, name3, \
+    type4, name4, type5, name5, type6, name6) \
+  DECLARE_PACKABLE_6_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6) \
+  DECLARE_STRUCT_END
+
+#define DECLARE_PACKABLE_7_START(name, type1, name1, type2, name2, \
+    type3, name3, type4, name4, type5, name5, type6, name6, type7, name7) \
+  DECLARE_STRUCT_7_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6, type7, name7) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 \
+        << x.name6 << x.name7; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 \
+        >> x.name6 >> x.name7; \
+    return p; \
+  }
+
+#define DECLARE_PACKABLE_7(name, type1, name1, type2, name2, type3, name3, \
+    type4, name4, type5, name5, type6, name6, type7, name7) \
+  DECLARE_PACKABLE_7_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6, type7, name7) \
+  DECLARE_STRUCT_END
+
+#define DECLARE_PACKABLE_8_START(name, type1, name1, type2, name2, \
+    type3, name3, type4, name4, type5, name5, type6, name6, type7, \
+    name7, type8, name8) \
+  DECLARE_STRUCT_8_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6, type7, name7, type8, name8) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 << x.name6 \
+        << x.name7 << x.name8; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 >> x.name6 \
+        >> x.name7 >> x.name8; \
+    return p; \
+  }
+
+#define DECLARE_PACKABLE_8(name, type1, name1, type2, name2, type3, name3, \
+    type4, name4, type5, name5, type6, name6, type7, name7, type8, name8) \
+  DECLARE_PACKABLE_8_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6, type7, name7, type8, name8) \
+  DECLARE_STRUCT_END
+
+#define DECLARE_PACKABLE_9_START(name, type1, name1, type2, name2, \
+    type3, name3, type4, name4, type5, name5, type6, name6, type7, name7, \
+    type8, name8, type9, name9) \
+  DECLARE_STRUCT_9_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6, type7, name7, type8, name8, \
+      type9, name9) \
+  friend packer& operator<<(packer &p, const name &x) { \
+    p << x.name1 << x.name2 << x.name3 << x.name4 << x.name5 << x.name6 \
+        << x.name7 << x.name8 << x.name9; \
+    return p; \
+  } \
+  friend unpacker& operator>>(unpacker &p, name &x) { \
+    p >> x.name1 >> x.name2 >> x.name3 >> x.name4 >> x.name5 >> x.name6 \
+        >> x.name7 >> x.name8 >> x.name9; \
+    return p; \
+  }
+
+#define DECLARE_PACKABLE_9(name, type1, name1, type2, name2, type3, name3, \
+    type4, name4, type5, name5, type6, name6, type7, name7, type8, name8, \
+    type9, name9) \
+  DECLARE_PACKABLE_9_START(name, type1, name1, type2, name2, type3, name3, \
+      type4, name4, type5, name5, type6, name6, type7, name7, type8, name8, \
+      type9, name9) \
+  DECLARE_STRUCT_END
