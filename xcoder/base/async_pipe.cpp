@@ -198,7 +198,7 @@ bool async_pipe_writer::write_packet(const packet &p) {
     if (written_ < buffer_.size()) {
       writable_ = false;
       if (feof(fp_) || ferror(fp_)) {
-        listener_->on_error(0);
+        listener_->on_error(this, 0);
         return false;
       }
       enable_write_callback();
