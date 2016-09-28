@@ -5,10 +5,16 @@
 #include <cstring>
 #include <vector>
 
+#include "base/async_pipe.h"
+#include "base/packer.h"
 #include "base/safe_log.h"
 
 namespace agora {
 namespace xcodec {
+
+using base::async_pipe_reader;
+using base::async_pipe_writer;
+using base::unpacker;
 
 Recorder* Recorder::CreateRecorder(RecorderCallback *callback) {
   signal(SIGPIPE, SIG_IGN);
@@ -51,12 +57,12 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
 
   args.push_back("--write");
   char write_str[16];
-  snprintf(write_str, 16, "%d", fds[0]);
+  snprintf(write_str, 16, "%d", reader_fds[0]);
   args.push_back(write_str);
 
   args.push_back("--read");
   char read_str[16];
-  snprintf(read_str, 16, "%d", fds[1]);
+  snprintf(read_str, 16, "%d", reader_fds[1]);
   args.push_back(read_str);
 
   if (is_dual) {
@@ -73,16 +79,16 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
   args.push_back(NULL);
 
   base::process p;
-  if (!p.start(&args[0], false, skipped, 2)) {
-    close(fds[0]);
-    close(fds[1]);
+  if (!p.start(&args[0], false, NULL, 0)) {
+    close(reader_fds[0]);
+    close(reader_fds[1]);
     return -1;
   }
 
   process_.swap(p);
 
-  reader_ = new (std::nothrow)async_pipe_reader(&loop_, fds[0], this);
-  writer_ = new (std::nothrow)async_pipe_writer(&loop_, fds[1], this);
+  reader_ = new (std::nothrow)async_pipe_reader(&loop_, reader_fds[0], this);
+  writer_ = new (std::nothrow)async_pipe_writer(&loop_, reader_fds[1], this);
 
   thread_ = std::thread(&RecorderImpl::run_internal, this);
   return 0;
@@ -103,7 +109,28 @@ int RecorderImpl::leave_channel() {
   }
 
   thread_.join();
+  return 0;
+}
+
+bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
+    unpacker &pkr, uint16_t uri) {
+  switch (uri) {
+  case protocol::AUDIO_FRAME_URI:
+  case protocol::VIDEO_FRAME_URI:
+  default: return false;
+  }
+
+  return true;
+}
+
+bool RecorderImpl::on_error(async_pipe_reader *reader, short events) {
+  return false;
+}
+
+bool RecorderImpl::on_error(async_pipe_writer *writer, short events) {
+  return false;
 }
 
 }
 }
+

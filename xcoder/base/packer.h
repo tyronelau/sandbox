@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "base/declare_struct.h"
+// #include "base/declare_struct.h"
 
 namespace agora {
 namespace base {
@@ -23,6 +23,7 @@ class packer {
   size_t length() const;
   std::string body() const;
   const char* buffer() const;
+  std::vector<char> take_buffer();
 
   packer& pack();
   void reset();
@@ -103,8 +104,6 @@ class unpacker {
   void check_size(size_t more, uint32_t position) const;
 
   void rewind();
-
-  void write(uint16_t val, uint32_t position);
 
   uint64_t pop_uint64();
   uint32_t pop_uint32();

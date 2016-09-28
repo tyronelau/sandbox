@@ -35,15 +35,15 @@ int event_loop::run() {
       assert(events_.find(e.fd) != events_.end());
 
       if (e.revents & (POLLHUP | POLLRDHUP | POLLERR)) {
-        on_error_event(fd, e.revents);
+        on_error_event(e.fd, e.revents);
       }
 
       if (e.revents & POLLIN) {
-        on_read_event(fd, e.revents);
+        on_read_event(e.fd, e.revents);
       }
 
       if (e.revents & POLLOUT) {
-        on_write_event(fd, e.revents);
+        on_write_event(e.fd, e.revents);
       }
     }
   }
@@ -63,6 +63,11 @@ int event_loop::add_watcher(int fd, void *context,
 int event_loop::remove_watcher(int fd, void *context,
     event_callback_t read_handler, event_callback_t write_handler,
     event_callback_t error_handler) {
+  (void)context;
+  (void)read_handler;
+  (void)write_handler;
+  (void)error_handler;
+
   auto it = events_.find(fd);
   if (it == events_.end())
     return -1;
@@ -89,7 +94,7 @@ void event_loop::prepare_poll_events() {
     }
 
     if (e.write_callback) {
-      p.events | = POLLOUT;
+      p.events |= POLLOUT;
     }
 
     if (e.error_callback) {
@@ -104,6 +109,8 @@ int event_loop::stop() {
 }
 
 void event_loop::on_read_event(int fd, int events) {
+  (void)events;
+
   auto it = events_.find(fd);
   if (it == events_.end())
     return;
@@ -114,6 +121,8 @@ void event_loop::on_read_event(int fd, int events) {
 }
 
 void event_loop::on_write_event(int fd, int events) {
+  (void)events;
+
   auto it = events_.find(fd);
   if (it == events_.end())
     return;
@@ -124,6 +133,8 @@ void event_loop::on_write_event(int fd, int events) {
 }
 
 void event_loop::on_error_event(int fd, int events) {
+  (void)events;
+
   auto it = events_.find(fd);
   if (it == events_.end())
     return;

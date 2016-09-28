@@ -1,25 +1,33 @@
 #pragma once
 
+#include <cstdint>
+#include <string>
+
+#include "base/packet.h"
+
 namespace agora {
 namespace protocol {
 
-struct packet_common_header {
-  uint32_t size;
-  uint16_t uri;
-  uint16_t reserved; 
+enum message_uri {
+  LEAVE_URI = 1,
+  USER_JOINED_URI = 2,
+  USER_DROPPED_URI = 3,
+  AUDIO_FRAME_URI = 4,
+  VIDEO_FRAME_URI = 5,
 };
 
-struct packet {
-  packet_common_header header;
-  packet(uint32_t size, uint16_t uri, uint16_t reserved=0);
-};
+DECLARE_PACKET_1(leave_packet, LEAVE_URI, int32_t, reason);
 
-class leave_packet : public packet {
- public:
-  leave_packet();
-  ~leave_packet();
- private:
-};
+DECLARE_PACKET_1(user_joined, USER_JOINED_URI, uint32_t, uid);
+DECLARE_PACKET_1(user_dropped, USER_DROPPED_URI, uint32_t, uid);
+
+DECLARE_PACKET_7(audio_frame, AUDIO_FRAME_URI, uint32_t, uid, uint32_t,
+    frame_ms, uint8_t, channels, uint8_t, bits, uint8_t, rates,
+    uint32_t, samples, std::string, data);
+
+DECLARE_PACKET_8(video_frame, VIDEO_FRAME_URI, uint32_t, uid, uint32_t,
+    frame_ms, uint16_t, width, uint16_t, height, uint16_t, ystride,
+    uint16_t, ustride, uint16_t, vstride, std::string, data);
 
 }
 }

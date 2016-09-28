@@ -7,7 +7,7 @@
 #endif
 
 namespace agora {
-namespace commons {
+namespace base {
 
 // exit_state records exit status of the invoked process
 // kExitCode means that process calls exit() or return from main(),
@@ -53,6 +53,7 @@ class process {
 
   bool stop();
   bool terminate();
+  bool wait();
 
   void swap(process &rhs);
 

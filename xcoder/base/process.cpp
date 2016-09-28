@@ -23,7 +23,7 @@
 #include "base/safe_log.h"
 
 namespace agora {
-namespace commons {
+namespace base {
 
 process::process() {
   process_fd_ = -1;
@@ -185,6 +185,33 @@ bool process::start(const char *exec_cmd, bool inherit_fd,
   }
 
   return start(&exec_args[0], inherit_fd, skipped, len);
+}
+
+bool process::wait() {
+  if (process_fd_ <= 0) {
+    return true;
+  }
+
+  int ret = -1;
+  int status = -1;
+  if ((ret = waitpid(process_fd_, &status, 0)) > 0) {
+    process_fd_ = -1;
+    if (WIFEXITED(status)) {
+      state_.kind = exit_state::kExitCode;
+      state_.exit_code = WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+      state_.kind = exit_state::kSignal;
+      state_.signal_no = WTERMSIG(status);
+    }
+
+    return true;
+  }
+
+  if (ret < 0) {
+    LOG(ERROR, "waitpid failed: %s", strerror(errno));
+  }
+
+  return false;
 }
 
 }

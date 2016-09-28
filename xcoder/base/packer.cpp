@@ -1,14 +1,14 @@
-#pragma once
-
 #include "base/packer.h"
 
 #include <cstring>
 #include <stdexcept>
+#include <utility>
 
 namespace agora {
 namespace base {
 
-packer::packer() : buffer_(kDefaultSize), length_(0), position_(4) {
+packer::packer() : buffer_(kDefaultSize), length_(0),
+    position_(sizeof(length_)) {
 }
 
 packer& packer::pack() {
@@ -49,6 +49,13 @@ void packer::push(uint32_t val) {
   position_ = static_cast<uint32_t>(position_ + sizeof(val));
 }
 
+std::vector<char> packer::take_buffer() {
+  length_ = 0;
+  position_ = sizeof(length_);
+
+  return std::vector<char>(std::move(buffer_));
+}
+
 void packer::push(uint16_t val) {
   check_size(sizeof(val), position_);
   memcpy(&buffer_[0] + position_, &val, sizeof(val));
@@ -84,7 +91,7 @@ size_t packer::length() const {
 }
 
 std::string packer::body() const {
-  return std::string(&buffer_[0] + 2, length_ - 2);
+  return std::string(&buffer_[0] + sizeof(length_), length_ - sizeof(length_));
 }
 
 void packer::check_size(size_t more, uint32_t position) {
@@ -148,8 +155,9 @@ unpacker::unpacker(const char *buf, size_t len, bool copy)
     : buffer_(NULL), length_(static_cast<uint32_t>(len)),
     position_(0), copy_(copy) {
   if (copy_) {
-    buffer_ = new (std::nothrow)char[len];
-    ::memcpy(buffer_, buf, len);
+    char *tmp = new (std::nothrow)char[len];
+    ::memcpy(tmp, buf, len);
+    buffer_ = tmp;
   } else {
     buffer_ = buf;
   }
@@ -183,11 +191,6 @@ unpacker::~unpacker()  {
 
 void unpacker::rewind() {
   position_ = sizeof(length_);
-}
-
-void unpacker::write(uint16_t val, uint32_t position) {
-  check_size(sizeof(val), position);
-  ::memcpy(buffer_ + position, &val, sizeof(val));
 }
 
 uint64_t unpacker::pop_uint64() {
