@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace agora {
 namespace xcodec {
 
@@ -12,6 +14,7 @@ enum ErrorCode {
 };
 
 class AudioFrame {
+  friend struct Recorder;
  public:
   AudioFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples);
   ~AudioFrame();
@@ -27,9 +30,10 @@ class AudioFrame {
 };
 
 class VideoFrame {
+  friend class RecorderImpl;
  public:
   VideoFrame(uint_t frame_ms, uint_t width, uint_t height, uint_t ystride,
-      uint_t ustride, uint_t vstrid);
+      uint_t ustride, uint_t vstride);
 
   ~VideoFrame();
  public:
@@ -45,6 +49,8 @@ class VideoFrame {
   uint_t ystride_;
   uint_t ustride_;
   uint_t vstride_;
+ private:
+  std::string data_;
 };
 
 struct RecorderCallback {

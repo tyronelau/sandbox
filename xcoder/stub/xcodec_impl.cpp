@@ -8,6 +8,7 @@
 #include "base/async_pipe.h"
 #include "base/packer.h"
 #include "base/safe_log.h"
+#include "protocol/ipc_protocol.h"
 
 namespace agora {
 namespace xcodec {
@@ -115,8 +116,18 @@ int RecorderImpl::leave_channel() {
 bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
     unpacker &pkr, uint16_t uri) {
   switch (uri) {
-  case protocol::AUDIO_FRAME_URI:
-  case protocol::VIDEO_FRAME_URI:
+  case protocol::AUDIO_FRAME_URI: {
+    protocol::audio_frame frame;
+    frame.unmarshall(pkr);
+    on_audio_frame(std::move(frame));
+    break;
+  }
+  case protocol::VIDEO_FRAME_URI: {
+    protocol::video_frame frame;
+    frame.unmarshall(pkr);
+    on_video_frame(std::move(frame));
+    break;
+  }
   default: return false;
   }
 
