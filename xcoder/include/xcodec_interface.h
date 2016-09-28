@@ -26,7 +26,7 @@ class AudioFrame {
   uint_t sample_rates_; // 8k, 16k, 32k
 
   uint_t samples_;
-  uchar_t *buf_; // samples * sample_bits_ / CHAR_BIT * channels_
+  std::string buf_; // samples * sample_bits_ / CHAR_BIT * channels_
 };
 
 class VideoFrame {
@@ -54,7 +54,7 @@ class VideoFrame {
 };
 
 struct RecorderCallback {
-  virtual void RecorderError() = 0;
+  virtual void RecorderError(int error, const char *reason) = 0;
 
   virtual void RemoteUserJoined(unsigned int uid) = 0;
   virtual void RemoteUserDropped(unsigned int uid) = 0;

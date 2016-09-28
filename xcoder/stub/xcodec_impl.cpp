@@ -128,6 +128,18 @@ bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
     on_video_frame(std::move(frame));
     break;
   }
+  case protocol::USER_JOINED_URI: {
+    protocol::user_joined joined;
+    joined.unmarshall(pkr);
+    on_user_joined(joined.uid);
+    break;
+  }
+  case protocol::USER_DROPPED_URI: {
+    protocol::user_dropped dropped;
+    dropped.unmarshall(pkr);
+    on_user_dropped(dropped.uid);
+    break;
+  }
   default: return false;
   }
 
@@ -140,6 +152,47 @@ bool RecorderImpl::on_error(async_pipe_reader *reader, short events) {
 
 bool RecorderImpl::on_error(async_pipe_writer *writer, short events) {
   return false;
+}
+
+void RecorderImpl::on_audio_frame(protocol::audio_frame frame) {
+  xcodec::AudioFrame t(frame.frame_ms, frame.rates, frame.samples);
+  t.channels_ = 1;
+  t.sample_bits_ = 16;
+  t.buf_ = std::move(frame.data);
+
+  if (callback_) {
+    callback_->AudioFrameReceived(frame.uid, &t);
+  }
+}
+
+void RecorderImpl::on_video_frame(protocol::video_frame frame) {
+  xcodec::VideoFrame t(frame.frame_ms, frame.width, frame.height,
+      frame.ystride, frame.ustride, frame.vstride);
+
+  t.data_ = std::move(frame.data);
+  t.ybuf_ = reinterpret_cast<uchar_t *>(&t.data_[0]);
+
+  size_t offset = t.height_ * t.ystride_;
+  t.ubuf_ = reinterpret_cast<uchar_t *>(&t.data_[offset]);
+
+  offset += t.height_ * t.ustride_ / 2;
+  t.vbuf_ = reinterpret_cast<uchar_t *>(&t.data_[offset]);
+
+  if (callback_) {
+    callback_->VideoFrameReceived(frame.uid, &t);
+  }
+}
+
+void RecorderImpl::on_user_joined(uint32_t uid) {
+  if (callback_) {
+    callback_->RemoteUserJoined(uid);
+  }
+}
+
+void RecorderImpl::on_user_dropped(uint32_t uid) {
+  if (callback_) {
+    callback_->RemoteUserDropped(uid);
+  }
 }
 
 }
