@@ -9,7 +9,9 @@
 
 #include "base/async_pipe.h"
 #include "base/atomic.h"
+#include "base/packet.h"
 #include "base/event_loop.h"
+#include "base/event_queue.h"
 
 namespace agora {
 namespace recording {
@@ -17,8 +19,11 @@ namespace recording {
 class audio_observer;
 class video_observer;
 
+typedef std::unique_ptr<base::packet> frame_ptr_t;
+
 class event_handler : private rtc::IRtcEngineEventHandlerEx,
-    private base::pipe_read_listener, private base::pipe_write_listener {
+    private base::pipe_read_listener, private base::pipe_write_listener,
+    private base::async_event_handler<frame_ptr_t> {
  public:
   event_handler(uint32_t uid,
       const std::string &vendor_key,
@@ -51,6 +56,9 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   virtual bool on_error(base::async_pipe_reader *reader, short events);
   virtual bool on_error(base::async_pipe_writer *writer, short events);
 
+  // Inherited from |async_event_handler|
+  virtual void on_event(frame_ptr_t frame);
+
   void cleanup();
   void on_leave(int reason);
 
@@ -78,8 +86,9 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   base::async_pipe_writer *writer_;
   base::event_loop loop_;
 
-  static atomic_bool_t s_term_sig_;
+  base::event_queue<frame_ptr_t> frames_;
 
+  static atomic_bool_t s_term_sig_;
   static const unsigned char kBytesPerSample = 2;
   static const unsigned char kChannels = 1;
 };

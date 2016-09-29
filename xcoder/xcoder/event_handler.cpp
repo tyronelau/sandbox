@@ -45,7 +45,7 @@ atomic_bool_t event_handler::s_term_sig_;
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
     const string &channel_name, bool dual, int read_fd, int write_fd)
     : uid_(uid), vendor_key_(vendor_key), channel_name_(channel_name),
-    is_dual_(dual) {
+    is_dual_(dual), frames_(&loop_, this, 128) {
   applite_ = NULL;
   joined_ = false;
 
@@ -277,6 +277,13 @@ bool event_handler::on_error(base::async_pipe_writer *writer, short events) {
   loop_.stop();
 
   return true;
+}
+
+void event_handler::on_event(frame_ptr_t frame) {
+  // FIXME
+  if (writer_) {
+    writer_->write_packet(*frame.get());
+  }
 }
 
 }

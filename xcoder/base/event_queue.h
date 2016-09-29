@@ -14,7 +14,7 @@ class event_loop;
 
 template <typename Elem>
 struct async_event_handler {
-  virtual void on_event(const Elem &e) = 0;
+  virtual void on_event(Elem e) = 0;
 };
 
 template <typename Elem>
@@ -36,9 +36,10 @@ class event_queue {
   void close();
  private:
   static void read_callback(int fd, void *context);
-  static void error_callback(int fd, short events, void *context);
+  static void error_callback(int fd, void *context);
 
   void handle_events();
+  void handle_error();
  private:
   event_loop *base_;
   async_event_handler<Elem> *handler_;
@@ -49,7 +50,7 @@ class event_queue {
 };
 
 template <typename Elem>
-event_queue<Elem>::event_queue(event_base *base,
+event_queue<Elem>::event_queue(event_loop *base,
     async_event_handler<Elem> *handler, size_t size)
     : base_(base), handler_(handler), queue_(size) {
   LOG(INFO, "event base: %p", base_);
@@ -95,7 +96,7 @@ size_t event_queue<Elem>::take_all(output_iterator out) {
 template <typename Elem>
 void event_queue<Elem>::read_callback(int fd, void *context) {
   (void)fd;
-  (void)event;
+  (void)context;
 
   event_queue<Elem> *p = reinterpret_cast<event_queue<Elem> *>(context);
   assert(fd == p->queue_.GetEventFD());
@@ -106,19 +107,23 @@ template <typename Elem>
 void event_queue<Elem>::handle_events() {
   std::vector<Elem> events;
   queue_.TakeAll(std::back_inserter(events));
-  for (const Elem &e: events) {
-    handler_->on_event(e);
+  for (Elem &e: events) {
+    handler_->on_event(std::move(e));
   }
 }
 
 template <typename Elem>
-void event_queue<Elem>::error_callback(int fd, short event, void *context) {
+void event_queue<Elem>::error_callback(int fd, void *context) {
   (void)fd;
-  (void)event;
 
   event_queue<Elem> *p = reinterpret_cast<event_queue<Elem> *>(context);
   assert(fd == p->queue_.GetEventFD());
   p->handle_error();
+}
+
+template <typename Elem>
+void event_queue<Elem>::handle_error() {
+  // FIXME
 }
 
 template <typename Elem>

@@ -41,7 +41,7 @@ bool video_observer::onRenderVideoFrame(uint_t uid, uchar_t *yBuffer,
   (void)uStride;
   (void)vStride;
 
-  SAFE_LOG(INFO) << "Frame received: " << uid << ", width: " << width
+  SAFE_LOG(DEBUG) << "Frame received: " << uid << ", width: " << width
       << ", height: " << height;
 
   return true;

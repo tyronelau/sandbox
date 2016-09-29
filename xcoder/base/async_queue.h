@@ -141,8 +141,8 @@ size_t AsyncQueue<Elem>::TakeAll(OutputIterator out) {
 
   // std::copy(q_.begin(), q_.end(), out);
   while (!q_.empty()) {
-    const Elem &e = q_.front();
-    *out++ = e;
+    Elem &e = q_.front();
+    *out++ = std::move(e);
     q_.pop();
   }
 
