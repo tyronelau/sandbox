@@ -36,20 +36,30 @@ namespace recording {
 
 using std::string;
 
+using base::async_pipe_reader;
+using base::async_pipe_writer;
+using base::unpacker;
+
 atomic_bool_t event_handler::s_term_sig_;
 
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
-    const string &channel_name, bool dual)
+    const string &channel_name, bool dual, int read_fd, int write_fd)
     : uid_(uid), vendor_key_(vendor_key), channel_name_(channel_name),
     is_dual_(dual) {
   applite_ = NULL;
   joined_ = false;
+
+  reader_ = new (std::nothrow)async_pipe_reader(&loop_, read_fd, this);
+  writer_ = new (std::nothrow)async_pipe_writer(&loop_, write_fd, this);
 }
 
 event_handler::~event_handler() {
   if (applite_) {
     cleanup();
   }
+
+  delete reader_;
+  delete writer_;
 }
 
 #ifdef GOOGLE_PROFILE_FLAG
@@ -138,15 +148,17 @@ int event_handler::run() {
 }
 
 int event_handler::run_internal() {
+  return loop_.run();
+
   // FIXME: run your event loop here.
-  while (!s_term_sig_) {
-    sleep(1);
-  }
+  // while (!s_term_sig_) {
+  //   sleep(1);
+  // }
 
-  SAFE_LOG(INFO) << "Ready to leave";
+  // SAFE_LOG(INFO) << "Ready to leave";
 
-  cleanup();
-  return 0;
+  // cleanup();
+  // return 0;
 }
 
 void event_handler::term_handler(int sig_no) {
@@ -217,6 +229,54 @@ void event_handler::onLogEvent(int level, const char *msg, int length) {
   (void)length;
 
   LOG(INFO, "level %d: %s", level, msg);
+}
+
+bool event_handler::on_receive_packet(async_pipe_reader *reader, unpacker &pkr,
+    uint16_t uri) {
+  (void)reader;
+  assert(reader == reader_);
+
+  switch (uri) {
+  case protocol::LEAVE_URI: {
+    protocol::leave_packet leave;
+    leave.unmarshall(pkr);
+    on_leave(leave.reason);
+    break;
+  }
+  default: break;
+  }
+
+  return true;
+}
+
+void event_handler::on_leave(int reason) {
+  LOG(INFO, "Required to stop :%d", reason);
+
+  loop_.stop();
+}
+
+bool event_handler::on_error(base::async_pipe_reader *reader, short events) {
+  (void)reader;
+  (void)events;
+
+  assert(reader == reader_);
+
+  LOG(INFO, "Reading pipe broken");
+  loop_.stop();
+
+  return true;
+}
+
+bool event_handler::on_error(base::async_pipe_writer *writer, short events) {
+  (void)writer;
+  (void)events;
+
+  assert(writer == writer_);
+
+  LOG(INFO, "Writing pipe broken");
+  loop_.stop();
+
+  return true;
 }
 
 }

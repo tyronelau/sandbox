@@ -72,6 +72,8 @@ class async_pipe_writer {
   bool close();
 
   bool is_closed() const;
+  int get_pipe_fd() const;
+
   bool write_packet(const packet &p);
  private:
   void enable_write_callback();

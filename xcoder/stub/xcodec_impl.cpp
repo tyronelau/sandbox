@@ -1,5 +1,6 @@
 #include "stub/xcodec_impl.h"
 
+#include <cassert>
 #include <cerrno>
 #include <csignal>
 #include <cstring>
@@ -13,6 +14,7 @@
 namespace agora {
 namespace xcodec {
 
+using std::string;
 using base::async_pipe_reader;
 using base::async_pipe_writer;
 using base::unpacker;
@@ -115,6 +117,9 @@ int RecorderImpl::leave_channel() {
 
 bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
     unpacker &pkr, uint16_t uri) {
+  (void)reader;
+  assert(reader == reader_);
+
   switch (uri) {
   case protocol::AUDIO_FRAME_URI: {
     protocol::audio_frame frame;
@@ -140,6 +145,12 @@ bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
     on_user_dropped(dropped.uid);
     break;
   }
+  case protocol::RECORDER_ERROR_URI: {
+    protocol::recorder_error error;
+    error.unmarshall(pkr);
+    on_recorder_error(error.error_code, error.reason);
+    break;
+  }
   default: return false;
   }
 
@@ -147,11 +158,27 @@ bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
 }
 
 bool RecorderImpl::on_error(async_pipe_reader *reader, short events) {
-  return false;
+  (void)reader;
+  (void)events;
+
+  assert(reader == reader_);
+
+  if (callback_) {
+    callback_->RecorderError(-1, "Broken pipe");
+  }
+  return true;
 }
 
 bool RecorderImpl::on_error(async_pipe_writer *writer, short events) {
-  return false;
+  (void)writer;
+  (void)events;
+
+  assert(writer == writer_);
+
+  if (callback_) {
+    callback_->RecorderError(-1, "Broken pipe");
+  }
+  return true;
 }
 
 void RecorderImpl::on_audio_frame(protocol::audio_frame frame) {
@@ -192,6 +219,12 @@ void RecorderImpl::on_user_joined(uint32_t uid) {
 void RecorderImpl::on_user_dropped(uint32_t uid) {
   if (callback_) {
     callback_->RemoteUserDropped(uid);
+  }
+}
+
+void RecorderImpl::on_recorder_error(int32_t error_code, const string &reason) {
+  if (callback_) {
+    callback_->RecorderError(error_code, reason.c_str());
   }
 }
 

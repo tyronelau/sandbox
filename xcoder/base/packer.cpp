@@ -11,6 +11,9 @@ packer::packer() : buffer_(kDefaultSize), length_(0),
     position_(sizeof(length_)) {
 }
 
+packer::~packer() {
+}
+
 packer& packer::pack() {
   length_ = position_;
   position_ = 0;
@@ -42,11 +45,19 @@ void packer::push(uint64_t val) {
   position_ = static_cast<uint32_t>(position_ + sizeof(val));
 }
 
+void packer::push(int64_t val) {
+  push(static_cast<uint64_t>(val));
+}
+
 void packer::push(uint32_t val) {
   check_size(sizeof(val), position_);
   memcpy(&buffer_[0] + position_, &val, sizeof(val));
 
   position_ = static_cast<uint32_t>(position_ + sizeof(val));
+}
+
+void packer::push(int32_t val) {
+  push(static_cast<uint32_t>(val));
 }
 
 std::vector<char> packer::take_buffer() {
@@ -63,11 +74,19 @@ void packer::push(uint16_t val) {
   position_ = static_cast<uint32_t>(position_ + sizeof(val));
 }
 
+void packer::push(int16_t val) {
+  push(static_cast<uint16_t>(val));
+}
+
 void packer::push(uint8_t val) {
   check_size(sizeof(val), position_);
   memcpy(&buffer_[0] + position_, &val, sizeof(val));
 
   position_ = static_cast<uint32_t>(position_ + sizeof(val));
+}
+
+void packer::push(int8_t val) {
+  push(static_cast<uint8_t>(val));
 }
 
 void packer::push(const std::string &val) {

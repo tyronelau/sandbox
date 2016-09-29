@@ -27,12 +27,12 @@ struct packet {
   uint16_t uri_;
 };
 
-packer& operator <<(packer& p, const packet &x) {
+inline packer& operator <<(packer& p, const packet &x) {
   x.marshall(p);
   return p;
 }
 
-unpacker& operator >>(unpacker &p, packet &x) {
+inline unpacker& operator >>(unpacker &p, packet &x) {
   x.unmarshall(p);
   return p;
 }

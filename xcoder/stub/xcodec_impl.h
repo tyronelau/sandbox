@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <thread>
 
 #include "include/xcodec_interface.h"
@@ -44,6 +45,7 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
 
   void on_audio_frame(protocol::audio_frame frame);
   void on_video_frame(protocol::video_frame frame);
+  void on_recorder_error(int32_t error_code, const std::string &reason);
  private:
   std::thread thread_;
   base::event_loop loop_;

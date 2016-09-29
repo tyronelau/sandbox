@@ -66,7 +66,7 @@ struct RecorderCallback {
 struct Recorder {
   static Recorder* CreateRecorder(RecorderCallback *callback);
 
-  virtual int JoinChannel(const char *vendor_key, const char *channel_name,
+  virtual int JoinChannel(const char *app_id, const char *channel_name,
       bool is_dual=false, uint_t uid=0) = 0;
 
   virtual int LeaveChannel() = 0;

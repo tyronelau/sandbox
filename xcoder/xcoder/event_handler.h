@@ -7,7 +7,9 @@
 #include "internal/rtc/IAgoraRtcEngine.h"
 #include "internal/rtc/rtc_engine_i.h"
 
+#include "base/async_pipe.h"
 #include "base/atomic.h"
+#include "base/event_loop.h"
 
 namespace agora {
 namespace recording {
@@ -15,12 +17,14 @@ namespace recording {
 class audio_observer;
 class video_observer;
 
-class event_handler : private rtc::IRtcEngineEventHandlerEx {
+class event_handler : private rtc::IRtcEngineEventHandlerEx,
+    private base::pipe_read_listener, private base::pipe_write_listener {
  public:
   event_handler(uint32_t uid,
       const std::string &vendor_key,
       const std::string &channel_name,
-      bool is_dual);
+      bool is_dual, int read_fd,
+      int write_fd);
 
   ~event_handler();
 
@@ -41,7 +45,14 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx {
   // inherited from IRtcEngineEventHandlerEx
   virtual void onLogEvent(int level, const char *msg, int length);
 
+  virtual bool on_receive_packet(base::async_pipe_reader *reader,
+      base::unpacker &pkr, uint16_t uri);
+
+  virtual bool on_error(base::async_pipe_reader *reader, short events);
+  virtual bool on_error(base::async_pipe_writer *writer, short events);
+
   void cleanup();
+  void on_leave(int reason);
 
   static void term_handler(int sig_no);
 
@@ -62,6 +73,10 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx {
 
   std::unique_ptr<audio_observer> audio_;
   std::unique_ptr<video_observer> video_;
+
+  base::async_pipe_reader *reader_;
+  base::async_pipe_writer *writer_;
+  base::event_loop loop_;
 
   static atomic_bool_t s_term_sig_;
 
