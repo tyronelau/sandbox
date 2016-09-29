@@ -6,6 +6,7 @@
 
 #include "base/log.h"
 #include "base/async_queue.h"
+#include "base/event_loop.h"
 
 namespace agora {
 namespace base {

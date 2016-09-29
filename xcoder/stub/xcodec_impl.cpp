@@ -182,7 +182,7 @@ bool RecorderImpl::on_error(async_pipe_writer *writer, short events) {
 }
 
 void RecorderImpl::on_audio_frame(protocol::audio_frame frame) {
-  xcodec::AudioFrame t(frame.frame_ms, frame.rates, frame.samples);
+  xcodec::AudioFrame t(frame.frame_ms, frame.sample_rates, 160);
   t.channels_ = 1;
   t.sample_bits_ = 16;
   t.buf_ = std::move(frame.data);

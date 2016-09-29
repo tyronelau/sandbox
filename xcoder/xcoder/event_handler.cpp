@@ -93,8 +93,8 @@ int event_handler::run() {
   profiler_guard guard("./profile");
 #endif
 
-  audio_ = std::unique_ptr<audio_observer>(new audio_observer());
-  video_ = std::unique_ptr<video_observer>(new video_observer());
+  audio_ = std::unique_ptr<audio_observer>(new audio_observer(&frames_));
+  video_ = std::unique_ptr<video_observer>(new video_observer(&frames_));
 
   applite_ = dynamic_cast<rtc::IRtcEngineEx *>(createAgoraRtcEngine());
   if (applite_ == NULL) {

@@ -32,12 +32,12 @@ STUB_SOURCES  = $(wildcard stub/*.cpp)
 
 SOURCES = $(BASE_SOURCES) $(XCODER_SOURCES) $(STUB_SOURCES)
 
--include $(addprefix $(DBG_DEP_PATH)/, $(addsuffix .d, $(SOURCES)))
--include $(addprefix $(RLS_DEP_PATH)/, $(addsuffix .d, $(SOURCES)))
-
 DBG_OBJ_PATH = debug/$(OBJ_DIR)
 DBG_DEP_PATH = debug/$(DEP_DIR)
 DBG_BIN_PATH = debug/$(BIN_DIR)
+
+-include $(addprefix $(DBG_DEP_PATH)/, $(addsuffix .d, $(SOURCES)))
+-include $(addprefix $(RLS_DEP_PATH)/, $(addsuffix .d, $(SOURCES)))
 
 DBG_BASE_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(BASE_SOURCES))))
 DBG_XCODER_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(XCODER_SOURCES))))
