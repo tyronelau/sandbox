@@ -3,13 +3,13 @@
 #include <unistd.h>
 #include <sys/eventfd.h>
 
-#include <atomic>
 #include <cstring>
 #include <mutex>
 #include <queue>
 #include <utility>
 
 // #include <glog/logging.h>
+#include "base/atomic.h"
 #include "base/log.h"
 
 #ifndef DISALLOW_COPY_ASSIGN
@@ -68,7 +68,7 @@ class AsyncQueue {
   typedef std::lock_guard<std::mutex> AutoLock;
  private:
   int event_fd_;
-  std::atomic<bool> closed_;
+  atomic_bool_t closed_;
   mutable std::mutex lock_;
   size_t max_size_;
   std::queue<Elem> q_;

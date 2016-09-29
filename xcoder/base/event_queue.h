@@ -107,8 +107,8 @@ template <typename Elem>
 void event_queue<Elem>::handle_events() {
   std::vector<Elem> events;
   queue_.TakeAll(std::back_inserter(events));
-  for (Elem &e: events) {
-    handler_->on_event(std::move(e));
+  for (auto f = events.begin(); f != events.end(); ++f) {
+    handler_->on_event(std::move(*f));
   }
 }
 
