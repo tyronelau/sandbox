@@ -27,7 +27,7 @@ int event_loop::run() {
       return -1;
     }
 
-    if (n == 0 && stop_)
+    if (stop_)
       break;
 
     for (unsigned int i = 0; i < pollfds_.size(); ++i) {
@@ -45,6 +45,13 @@ int event_loop::run() {
       if (e.revents & POLLOUT) {
         on_write_event(e.fd, e.revents);
       }
+    }
+
+    typedef std::multiset<timer_event, timer_comparator> timer_map_t;
+    typedef timer_map_t::iterator timer_iter_t;
+    for (timer_iter_t it = timers_.begin(); it != timers_.end(); ++it) {
+      timer_event &timer = *it;
+      if (timer.
     }
   }
 
