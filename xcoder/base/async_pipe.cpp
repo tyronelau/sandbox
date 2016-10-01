@@ -1,6 +1,8 @@
 #include "base/async_pipe.h"
 
 #include <cassert>
+#include <cerrno>
+#include <cstring>
 
 #include "base/event_loop.h"
 #include "base/packer.h"
@@ -145,8 +147,8 @@ async_pipe_writer::async_pipe_writer(event_loop *loop, int fd,
   loop_ = loop;
   pipe_fd_ = fd;
 
-  if ((fp_ = fdopen(pipe_fd_, "ab")) == NULL) {
-    SAFE_LOG(FATAL) << "Failed to open the pipe to write";
+  if ((fp_ = fdopen(pipe_fd_, "wb")) == NULL) {
+    SAFE_LOG(FATAL) << "Failed to open the pipe to write" << strerror(errno);
     return;
   }
 

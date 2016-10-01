@@ -19,6 +19,34 @@ using base::async_pipe_reader;
 using base::async_pipe_writer;
 using base::unpacker;
 
+AudioFrame::AudioFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples) {
+  frame_ms_ = frame_ms;
+  channels_ = 1;
+  sample_bits_ = 16;
+  sample_rates_ = sample_rates;
+  samples_ = samples;
+}
+
+AudioFrame::~AudioFrame() {
+}
+
+VideoFrame::VideoFrame(uint_t frame_ms, uint_t width, uint_t height, uint_t ystride,
+    uint_t ustride, uint_t vstride) {
+  frame_ms_ = frame_ms;
+  width_ = width;
+  height_ = height;
+  ystride_ = ystride;
+  ustride_ = ustride;
+  vstride_ = vstride;
+
+  ybuf_ = NULL;
+  ubuf_ = NULL;
+  vbuf_ = NULL;
+}
+
+VideoFrame::~VideoFrame() {
+}
+
 Recorder* Recorder::CreateRecorder(RecorderCallback *callback) {
   signal(SIGPIPE, SIG_IGN);
   return new RecorderImpl(callback);
@@ -42,12 +70,26 @@ RecorderImpl::~RecorderImpl() {
   process_.wait();
 }
 
+int RecorderImpl::Destroy() {
+  delete this;
+  return 0;
+}
+
 int RecorderImpl::JoinChannel(const char *vendor_key,
     const char *channel_name, bool is_dual, uint_t uid) {
   int reader_fds[2];
   if (pipe(reader_fds) != 0) {
-    SAFE_LOG(ERROR) << "Failed to create a pipe: "
+    SAFE_LOG(ERROR) << "Failed to create a pipe for read: "
         << strerror(errno);
+    return -1;
+  }
+
+  int writer_fds[2];
+  if (pipe(writer_fds) != 0) {
+    SAFE_LOG(ERROR) << "Failed to create a pipe for write: "
+        << strerror(errno);
+    close(reader_fds[0]);
+    close(reader_fds[1]);
     return -1;
   }
 
@@ -60,12 +102,12 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
 
   args.push_back("--write");
   char write_str[16];
-  snprintf(write_str, 16, "%d", reader_fds[0]);
+  snprintf(write_str, 16, "%d", reader_fds[1]);
   args.push_back(write_str);
 
   args.push_back("--read");
   char read_str[16];
-  snprintf(read_str, 16, "%d", reader_fds[1]);
+  snprintf(read_str, 16, "%d", writer_fds[0]);
   args.push_back(read_str);
 
   if (is_dual) {
@@ -82,11 +124,17 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
   args.push_back(NULL);
 
   base::process p;
-  if (!p.start(&args[0], false, NULL, 0)) {
+  int skipped[2] = {writer_fds[0], reader_fds[1]};
+  if (!p.start(&args[0], false, skipped, 2)) {
     close(reader_fds[0]);
     close(reader_fds[1]);
+    close(writer_fds[0]);
+    close(writer_fds[1]);
     return -1;
   }
+
+  close(writer_fds[0]);
+  close(reader_fds[1]);
 
   process_.swap(p);
 
@@ -111,7 +159,10 @@ int RecorderImpl::leave_channel() {
     writer_->write_packet(pkt);
   }
 
-  thread_.join();
+  loop_.stop();
+  // if (thread_.joinable() && thread_.get_id() != std::this_thread::get_id())
+  //   thread_.join();
+
   return 0;
 }
 

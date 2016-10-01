@@ -89,63 +89,65 @@ void event_handler::cleanup() {
 }
 
 int event_handler::run() {
-#ifdef GOOGLE_PROFILE_FLAG
-  profiler_guard guard("./profile");
-#endif
-
-  audio_ = std::unique_ptr<audio_observer>(new audio_observer(&frames_));
-  video_ = std::unique_ptr<video_observer>(new video_observer(&frames_));
-
-  applite_ = dynamic_cast<rtc::IRtcEngineEx *>(createAgoraRtcEngine());
-  if (applite_ == NULL) {
-    SAFE_LOG(FATAL) << "Failed to create an Agora Rtc Engine!";
-    return -1;
-  }
-
-  registerAudioFrameObserver(audio_.get());
-  registerVideoFrameObserver(video_.get());
-
-  rtc::RtcEngineContextEx context;
-  context.eventHandler = this;
-  context.isExHandler = true;
-  context.vendorKey = NULL;
-  context.context = NULL;
-  context.applicationCategory = rtc::APPLICATION_CATEGORY_LIVE_BROADCASTING;
-
-  applite_->initializeEx(context);
-  applite_->setLogCallback(true);
-  applite_->enableVideo();
-
-  applite_->setProfile("{\"audioEngine\":{\"audioSampleRate\":32000}}", true);
-
-  if (is_dual_) {
-    applite_->setClientRole(rtc::CLIENT_ROLE_DUAL_STREAM_AUDIENCE);
-  } else {
-    applite_->setClientRole(rtc::CLIENT_ROLE_AUDIENCE);
-  }
-
-  last_active_ts_ = now_ts();
-
-  // setup signal handler
-  s_term_sig_ = false;
-
-  signal(SIGPIPE, SIG_IGN);
-  signal(SIGINT, term_handler);
-  signal(SIGTERM, term_handler);
-
-  agora::rtc::AParameter msp(*applite_);
-
-  // set the server_mode to true to enable the callback
-  msp->setBool("che.video.server_mode", true);
-
-  if (applite_->joinChannel(vendor_key_.c_str(), channel_name_.c_str(),
-      NULL, uid_) < 0) {
-    SAFE_LOG(ERROR) << "Failed to create the channel " << channel_name_;
-    return -1;
-  }
-
-  return run_internal();
+  return loop_.run();
 }
+// #ifdef GOOGLE_PROFILE_FLAG
+//   profiler_guard guard("./profile");
+// #endif
+// 
+//   audio_ = std::unique_ptr<audio_observer>(new audio_observer(&frames_));
+//   video_ = std::unique_ptr<video_observer>(new video_observer(&frames_));
+// 
+//   applite_ = dynamic_cast<rtc::IRtcEngineEx *>(createAgoraRtcEngine());
+//   if (applite_ == NULL) {
+//     SAFE_LOG(FATAL) << "Failed to create an Agora Rtc Engine!";
+//     return -1;
+//   }
+// 
+//   registerAudioFrameObserver(audio_.get());
+//   registerVideoFrameObserver(video_.get());
+// 
+//   rtc::RtcEngineContextEx context;
+//   context.eventHandler = this;
+//   context.isExHandler = true;
+//   context.vendorKey = NULL;
+//   context.context = NULL;
+//   context.applicationCategory = rtc::APPLICATION_CATEGORY_LIVE_BROADCASTING;
+// 
+//   applite_->initializeEx(context);
+//   applite_->setLogCallback(true);
+//   applite_->enableVideo();
+// 
+//   applite_->setProfile("{\"audioEngine\":{\"audioSampleRate\":32000}}", true);
+// 
+//   if (is_dual_) {
+//     applite_->setClientRole(rtc::CLIENT_ROLE_DUAL_STREAM_AUDIENCE);
+//   } else {
+//     applite_->setClientRole(rtc::CLIENT_ROLE_AUDIENCE);
+//   }
+// 
+//   last_active_ts_ = now_ts();
+// 
+//   // setup signal handler
+//   s_term_sig_ = false;
+// 
+//   signal(SIGPIPE, SIG_IGN);
+//   signal(SIGINT, term_handler);
+//   signal(SIGTERM, term_handler);
+// 
+//   agora::rtc::AParameter msp(*applite_);
+// 
+//   // set the server_mode to true to enable the callback
+//   msp->setBool("che.video.server_mode", true);
+// 
+//   if (applite_->joinChannel(vendor_key_.c_str(), channel_name_.c_str(),
+//       NULL, uid_) < 0) {
+//     SAFE_LOG(ERROR) << "Failed to create the channel " << channel_name_;
+//     return -1;
+//   }
+// 
+//   return run_internal();
+// }
 
 int event_handler::run_internal() {
   return loop_.run();

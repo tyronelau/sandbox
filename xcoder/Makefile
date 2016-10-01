@@ -29,8 +29,9 @@ BIN_DIR = bin
 BASE_SOURCES = $(wildcard base/*.cpp)
 XCODER_SOURCES  = $(wildcard xcoder/*.cpp)
 STUB_SOURCES  = $(wildcard stub/*.cpp)
+TEST_SOURCES  = $(wildcard test/*.cpp)
 
-SOURCES = $(BASE_SOURCES) $(XCODER_SOURCES) $(STUB_SOURCES)
+SOURCES = $(BASE_SOURCES) $(XCODER_SOURCES) $(STUB_SOURCES) $(TEST_SOURCES)
 
 DBG_OBJ_PATH = debug/$(OBJ_DIR)
 DBG_DEP_PATH = debug/$(DEP_DIR)
@@ -42,6 +43,7 @@ DBG_BIN_PATH = debug/$(BIN_DIR)
 DBG_BASE_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(BASE_SOURCES))))
 DBG_XCODER_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(XCODER_SOURCES))))
 DBG_STUB_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(STUB_SOURCES))))
+DBG_TEST_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(TEST_SOURCES))))
 
 RLS_OBJ_PATH = release/$(OBJ_DIR)
 RLS_DEP_PATH = release/$(DEP_DIR)
@@ -50,6 +52,7 @@ RLS_BIN_PATH = release/$(BIN_DIR)
 RLS_BASE_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(BASE_SOURCES))))
 RLS_XCODER_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(XCODER_SOURCES))))
 RLS_STUB_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(STUB_SOURCES))))
+RLS_TEST_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(TEST_SOURCES))))
 
 .PHONY: all clean debug release pre
 
@@ -86,10 +89,12 @@ $(RLS_OBJ_PATH)/%.o: %.c
 DBG_BASE_TARGET = $(DBG_BIN_PATH)/libbase.a
 DBG_XCODER_TARGET = $(DBG_BIN_PATH)/xcoder
 DBG_STUB_TARGET = $(DBG_BIN_PATH)/libstub.a
+DBG_TEST_TARGET = $(DBG_BIN_PATH)/recorder_test
 
 RLS_BASE_TARGET = $(RLS_BIN_PATH)/libbase.a
 RLS_XCODER_TARGET = $(RLS_BIN_PATH)/xcoder
 RLS_STUB_TARGET = $(RLS_BIN_PATH)/libstub.a
+RLS_TEST_TARGET = $(RLS_BIN_PATH)/recorder_test
 
 $(DBG_BASE_TARGET): $(DBG_BASE_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -99,6 +104,11 @@ $(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_XCODER_OBJECTS) \
 		-Llibs -L$(DBG_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread
+
+$(DBG_TEST_TARGET): $(DBG_STUB_TARGET) $(DBG_BASE_TARGET) $(DBG_TEST_OBJECTS)
+	@mkdir -p $(dir $@)
+	$(LINK) $(LDFLAGS) -o "$@" $(DBG_TEST_OBJECTS) \
+		-Llibs -L$(DBG_BIN_PATH) -lstub -lbase -pthread -lpthread
 
 $(DBG_STUB_TARGET): $(DBG_STUB_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -113,15 +123,20 @@ $(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) $(RLS_STUB_TARGET
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) \
 		-Llibs -L$(RLS_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread
 
+$(RLS_TEST_TARGET): $(RLS_STUB_TARGET) $(RLS_BASE_TARGET) $(RLS_TEST_OBJECTS)
+	@mkdir -p $(dir $@)
+	$(LINK) $(LDFLAGS) -o "$@" $(RLS_TEST_OBJECTS) \
+		-Llibs -L$(RLS_BIN_PATH) -lstub -lbase -pthread -lpthread
+
 $(RLS_STUB_TARGET): $(RLS_STUB_OBJECTS)
 	@mkdir -p $(dir $@)
 	ar cqs "$@" $^
 
-debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET) $(DBG_STUB_TARGET)
+debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET) $(DBG_STUB_TARGET) $(DBG_TEST_TARGET)
 	ln -f libs/libHDACEngine.so $(DBG_BIN_PATH)/libHDACEngine.so
 	ln -f libs/libagorartc.so $(DBG_BIN_PATH)/libagorartc.so
 
-release: $(RLS_BASE_TARGET) $(RLS_XCODER_TARGET) $(RLS_STUB_TARGET)
+release: $(RLS_BASE_TARGET) $(RLS_XCODER_TARGET) $(RLS_STUB_TARGET) $(RLS_TEST_TARGET)
 	ln -f libs/libHDACEngine.so $(RLS_BIN_PATH)/libHDACEngine.so
 	ln -f libs/libagorartc.so $(RLS_BIN_PATH)/libagorartc.so
 
