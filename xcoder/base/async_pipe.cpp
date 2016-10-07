@@ -148,7 +148,7 @@ async_pipe_writer::async_pipe_writer(event_loop *loop, int fd,
   pipe_fd_ = fd;
 
   if ((fp_ = fdopen(pipe_fd_, "wb")) == NULL) {
-    SAFE_LOG(FATAL) << "Failed to open the pipe to write" << strerror(errno);
+    SAFE_LOG(FATAL) << "Failed to open the pipe to write: " << strerror(errno);
     return;
   }
 
@@ -211,6 +211,7 @@ bool async_pipe_writer::write_packet(const packet &p) {
 
   // static const size_t kMaxPendingSize = 10 * 1024 * 1024;
 
+  SAFE_LOG(INFO) << "Pending: " << pending_packets_.size();
   pending_packets_.push(std::move(buffer));
   return false;
 }
@@ -256,6 +257,7 @@ bool async_pipe_writer::on_write() {
 void async_pipe_writer::write_callback(int fd, void *context) {
   (void)fd;
 
+  SAFE_LOG(INFO) << "Writable ";
   async_pipe_writer *writer = reinterpret_cast<async_pipe_writer *>(context);
   writer->on_write();
 }

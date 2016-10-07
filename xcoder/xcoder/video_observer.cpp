@@ -60,9 +60,9 @@ bool video_observer::onRenderVideoFrame(uint_t uid, uchar_t *yBuffer,
   frame->ustride = static_cast<uint16_t>(uStride);
   frame->vstride = static_cast<uint16_t>(vStride);
 
-  size_t y_size = width * yStride;
-  size_t u_size = width * uStride / 2;
-  size_t v_size = width * vStride / 2;
+  size_t y_size = height * yStride;
+  size_t u_size = height * uStride / 2;
+  size_t v_size = height * vStride / 2;
 
   std::string &data = frame->data;
   data.reserve(y_size + u_size + v_size);

@@ -139,7 +139,7 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
   process_.swap(p);
 
   reader_ = new (std::nothrow)async_pipe_reader(&loop_, reader_fds[0], this);
-  writer_ = new (std::nothrow)async_pipe_writer(&loop_, reader_fds[1], this);
+  writer_ = new (std::nothrow)async_pipe_writer(&loop_, writer_fds[1], this);
 
   thread_ = std::thread(&RecorderImpl::run_internal, this);
   return 0;
