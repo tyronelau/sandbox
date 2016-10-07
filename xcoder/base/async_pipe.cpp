@@ -11,11 +11,16 @@
 
 namespace agora {
 namespace base {
+
 async_pipe_reader::async_pipe_reader(event_loop *loop, int fd,
     pipe_read_listener *listener) {
   loop_ = loop;
   pipe_fd_ = fd;
-  fp_ = NULL;
+
+  if ((fp_ = fdopen(pipe_fd_, "rb")) == NULL) {
+    SAFE_LOG(FATAL) << "Failed to open the pipe to read: " << strerror(errno);
+    return;
+  }
 
   readed_ = 0;
   buffer_ = NULL;
@@ -157,7 +162,7 @@ async_pipe_writer::async_pipe_writer(event_loop *loop, int fd,
 
   closed_ = false;
   processing_ = false;
-  writable_ = false;
+  writable_ = true;
   total_size_ = 0;
 }
 
@@ -189,6 +194,7 @@ bool async_pipe_writer::write_packet(const packet &p) {
 
   // takes rvalue away
   std::vector<char> buffer = pkr.take_buffer();
+  // SAFE_LOG(INFO) << "packet size: " << buffer.size();
 
   if (writable_) {
     // Send it immediately
@@ -206,6 +212,8 @@ bool async_pipe_writer::write_packet(const packet &p) {
       enable_write_callback();
       return false;
     }
+
+    fflush(fp_);
     return true;
   }
 

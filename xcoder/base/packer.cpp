@@ -61,10 +61,12 @@ void packer::push(int32_t val) {
 }
 
 std::vector<char> packer::take_buffer() {
+  std::vector<char> buf(buffer_.begin(), buffer_.begin() + length_);
+
   length_ = 0;
   position_ = sizeof(length_);
 
-  return std::vector<char>(std::move(buffer_));
+  return buf;
 }
 
 void packer::push(uint16_t val) {

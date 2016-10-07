@@ -138,6 +138,9 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
 
   process_.swap(p);
 
+  SAFE_LOG(INFO) << "Reading pipe: " << reader_fds[0];
+  SAFE_LOG(INFO) << "Writing pipe: " << writer_fds[1];
+
   reader_ = new (std::nothrow)async_pipe_reader(&loop_, reader_fds[0], this);
   writer_ = new (std::nothrow)async_pipe_writer(&loop_, writer_fds[1], this);
 
@@ -216,7 +219,7 @@ bool RecorderImpl::on_error(async_pipe_reader *reader, short events) {
   assert(reader == reader_);
 
   if (callback_) {
-    callback_->RecorderError(-1, "Broken pipe");
+    callback_->RecorderError(-2, "Broken reading pipe");
   }
   return true;
 }
@@ -228,7 +231,7 @@ bool RecorderImpl::on_error(async_pipe_writer *writer, short events) {
   assert(writer == writer_);
 
   if (callback_) {
-    callback_->RecorderError(-1, "Broken pipe");
+    callback_->RecorderError(-1, "Broken writing pipe");
   }
   return true;
 }

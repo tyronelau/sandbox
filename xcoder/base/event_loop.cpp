@@ -32,9 +32,10 @@ event_loop::~event_loop() {
 }
 
 int event_loop::run() {
-  static const int kWaitMs = -1;
+  static const int kWaitMs = 500;
 
   while (!stop_) {
+    // SAFE_LOG(INFO) << "Ready to setup poll";
     prepare_poll_events();
 
     int n = poll(&pollfds_[0], pollfds_.size(), kWaitMs);
@@ -45,6 +46,8 @@ int event_loop::run() {
 
     if (stop_)
       break;
+
+    // SAFE_LOG(INFO) << "Checking events: ";
 
     for (unsigned int i = 0; i < pollfds_.size(); ++i) {
       pollfd &e = pollfds_[i];
@@ -65,6 +68,8 @@ int event_loop::run() {
       if (stop_)
         return 0;
     }
+
+    // SAFE_LOG(INFO) << "Checking timers";
 
     typedef std::set<timer_event *, timer_comparator> timer_map_t;
     typedef timer_map_t::iterator timer_iter_t;
@@ -178,6 +183,8 @@ void event_loop::on_error_event(int fd, int events) {
   if (it == events_.end())
     return;
 
+  SAFE_LOG(INFO) << "Error " << fd << events;
+
   const event &e = it->second;
   if (e.error_callback)
     (*e.error_callback)(fd, e.context);
@@ -193,6 +200,7 @@ timer_event* event_loop::add_timer(int32_t interval, event_callback_t callback,
   e->context = context;
   e->callback = callback;
 
+  timers_.insert(e);
   return e;
 }
 
