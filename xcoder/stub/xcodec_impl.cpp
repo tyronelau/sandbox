@@ -160,6 +160,7 @@ int RecorderImpl::leave_channel() {
   }
 
   loop_.stop();
+  thread_.detach();
   // if (thread_.joinable() && thread_.get_id() != std::this_thread::get_id())
   //   thread_.join();
 
