@@ -2,10 +2,10 @@
 
 VERSION = 1.6
 
-#CC            = gcc
-CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
-#CXX           = g++
-CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
+CC            = gcc
+#CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
+CXX           = g++
+#CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
 
 RELEASE_CFLAGS        = -pipe -O3 -fPIC -Wall -W -DNEDBUG=1 -g -fvisibility=hidden -Wconversion
 RELEASE_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -DNDEBUG=1 -Wconversion \
@@ -18,7 +18,8 @@ DEBUG_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -Wconver
 											-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden # -fsanitize=address
 
 INCPATH       =  -Iinternal -I.
-LINK          = /opt/rh/devtoolset-2/root/usr/bin/g++
+#LINK          = /opt/rh/devtoolset-2/root/usr/bin/g++
+LINK  = g++
 LDFLAGS        = -static-libgcc -static-libstdc++  # -Wl,-Bstatic,-lc -Wl,-Bstatic,-lm -Wl,-Bdynamic
 
 DEBUG_LINK_LIBS = -levent -levent_thread # -lasan 

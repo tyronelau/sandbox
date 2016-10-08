@@ -1,0 +1,5 @@
+create libxodec.a
+addlib libstub.a
+addlib libbase.a
+save
+end
