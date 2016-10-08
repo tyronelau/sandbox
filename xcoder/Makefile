@@ -2,21 +2,24 @@
 
 VERSION = 1.6
 
-CC            = gcc
-CXX           = g++
+#CC            = gcc
+CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
+#CXX           = g++
+CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
+
 RELEASE_CFLAGS        = -pipe -O3 -fPIC -Wall -W -DNEDBUG=1 -g -fvisibility=hidden -Wconversion
 RELEASE_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -DNDEBUG=1 -Wconversion \
 												-DGIT_DESC=\"`git rev-parse HEAD`\" -O3 \
 												-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden
 
-DEBUG_CFLAGS        = -pipe -O0 -Wall -W -fPIC -g -fvisibility=hidden -Wconversion # -fsanitize=address -Wconversion
+DEBUG_CFLAGS        = -pipe -O0 -Wall -W -fPIC -g -fno-omit-frame-pointer -fvisibility=hidden -Wconversion # -fsanitize=address -Wconversion
 DEBUG_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -Wconversion \
 											-DGIT_DESC=\"`git rev-parse HEAD`\" -O0 \
 											-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden # -fsanitize=address
 
 INCPATH       =  -Iinternal -I.
-LINK          = g++
-# LDFLAGS        = -static-libgcc -static-libstdc++  # -Wl,-Bstatic,-lc -Wl,-Bstatic,-lm -Wl,-Bdynamic
+LINK          = /opt/rh/devtoolset-2/root/usr/bin/g++
+LDFLAGS        = -static-libgcc -static-libstdc++  # -Wl,-Bstatic,-lc -Wl,-Bstatic,-lm -Wl,-Bdynamic
 
 DEBUG_LINK_LIBS = -levent -levent_thread # -lasan 
 

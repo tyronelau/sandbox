@@ -24,7 +24,7 @@ class video_observer : public media::IVideoFrameObserver {
       uchar_t *vBuffer, uint_t width, uint_t height,
       uint_t yStride, uint_t uStride, uint_t vStride);
 
-  virtual bool onRenderVideoFrame(uint_t uid, uchar_t *yBuffer,
+  virtual bool onRenderVideoFrame(uint_t uid, int rotation, uchar_t *yBuffer,
       uchar_t *uBuffer, uchar_t *vBuffer, uint_t width,
       uint_t height, uint_t yStride, uint_t uStride,
       uint_t vStride);

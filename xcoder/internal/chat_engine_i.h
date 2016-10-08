@@ -7,22 +7,22 @@
 //
 //  using namespace AgoraRTC;
 //  IChatEngine* chatEngine = createChatEngine();
-//	chatEngine->init();
-//	chatEngine->registerTransport(...);
+//  chatEngine->init();
+//  chatEngine->registerTransport(...);
 //  chatEngine->numOfCodecs();
 //  chatEngine->setCodec(...);
-//	chatEngine->setAecType(...);
+//  chatEngine->setAecType(...);
 //  chatEngine->setAgcStatus(...);
-//	chatEngine->setNsStatus(...);
-//	chatEngine->startCall(...);
-//	then ITransport will receive payload,and you can packet is yourself
+//  chatEngine->setNsStatus(...);
+//  chatEngine->startCall(...);
+//  then ITransport will receive payload,and you can packet is yourself
 //  and send it to net;at the same time, you will receive packet from net,
 //  and you should unpacket it and push it to 'chatEngine': chatEngine->receiveNetPacket(...);
 //  when you finish call,you should call in the order:
-//	chatEngine->stopCall();
-//	chatEngine->deRegisterTransport();
+//  chatEngine->stopCall();
+//  chatEngine->deRegisterTransport();
 //  chatEngine->terminate();
-//  destoryChatEngine(chatEngine);	
+//  destoryChatEngine(chatEngine);
 
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
@@ -64,53 +64,53 @@ namespace util
 {
 template<class T>
 class AutoPtr {
-	typedef T value_type;
-	typedef T* pointer_type;
+  typedef T value_type;
+  typedef T* pointer_type;
 public:
-	AutoPtr(pointer_type p=0)
-		:ptr_(p)
-	{}
-	~AutoPtr() {
-		if (ptr_)
-			ptr_->release();
-	}
-	operator bool() const { return ptr_ != (pointer_type)0; }
-	value_type& operator*() const {
-		return *get();
-	}
+  AutoPtr(pointer_type p=0)
+    :ptr_(p)
+  {}
+  ~AutoPtr() {
+    if (ptr_)
+      ptr_->release();
+  }
+  operator bool() const { return ptr_ != (pointer_type)0; }
+  value_type& operator*() const {
+    return *get();
+  }
 
-	pointer_type operator->() const {
-		return get();
-	}
+  pointer_type operator->() const {
+    return get();
+  }
 
-	pointer_type get() const {
-		return ptr_;
-	}
+  pointer_type get() const {
+    return ptr_;
+  }
 
-	pointer_type release() {
-		pointer_type tmp = ptr_;
-		ptr_ = 0;
-		return tmp;
-	}
+  pointer_type release() {
+    pointer_type tmp = ptr_;
+    ptr_ = 0;
+    return tmp;
+  }
 
-	void reset(pointer_type ptr = 0) {
-		if (ptr != ptr_ && ptr_)
-			ptr_->release();
-		ptr_ = ptr;
-	}
+  void reset(pointer_type ptr = 0) {
+    if (ptr != ptr_ && ptr_)
+      ptr_->release();
+    ptr_ = ptr;
+  }
 private:
-	AutoPtr(const AutoPtr&);
-	AutoPtr& operator=(const AutoPtr&);
+  AutoPtr(const AutoPtr&);
+  AutoPtr& operator=(const AutoPtr&);
 private:
-	pointer_type ptr_;
+  pointer_type ptr_;
 };
 class IString {
 public:
-	virtual bool empty() const = 0;
-	virtual const char* c_str() = 0;
-	virtual const char* data() = 0;
-	virtual size_t length() = 0;
-	virtual void release() = 0;
+  virtual bool empty() const = 0;
+  virtual const char* c_str() = 0;
+  virtual const char* data() = 0;
+  virtual size_t length() = 0;
+  virtual void release() = 0;
 };
 typedef AutoPtr<IString> AString;
 }
@@ -141,7 +141,7 @@ public:
       int sentFrames;
       int sentQP;
       int sentPkgNumber;
-      
+
       void reset() {
         sentBytes = 0;
         sentFrames = 0;
@@ -280,25 +280,21 @@ public:
     virtual void onVideoStat(const LocalVideoStat& localStat, RemoteVideoStat* remoteStat, int remoteCount) = 0;
     virtual void switchVideoStream(unsigned int uid, VideoStreamType stream) = 0;
     virtual void onBandWidthLevelChanged(int level) = 0;
-    virtual void onVideoViewSizeChanged(int userID, int newWidth, int newHeight) {
-      (void)userID;
-      (void)newWidth;
-      (void)newHeight;
-    }
+    virtual void onVideoViewSizeChanged(int userID, int newWidth, int newHeight){};
 };
 
 class IVideoFrameObserver
 {
 public:
     virtual bool onCaptureVideoFrame(unsigned char* yBuffer, unsigned char* uBuffer, unsigned char* vBuffer,
-                                    unsigned int width, unsigned int height, 
+                                    unsigned int width, unsigned int height,
                                     unsigned int yStride, unsigned int uStride, unsigned int vStride) = 0;
-    virtual bool onRenderVideoFrame(unsigned int uid, 
+    virtual bool onRenderVideoFrame(unsigned int uid, int rotation,
                                     unsigned char* yBuffer, unsigned char* uBuffer, unsigned char* vBuffer,
-                                    unsigned int width, unsigned int height, 
+                                    unsigned int width, unsigned int height,
                                     unsigned int yStride, unsigned int uStride, unsigned int vStride) = 0;
     virtual bool onExternalVideoFrame(unsigned char* yBuffer, unsigned char* uBuffer, unsigned char* vBuffer,
-                                      unsigned int width, unsigned int height, 
+                                      unsigned int width, unsigned int height,
                                       unsigned int yStride, unsigned int uStride, unsigned int vStride) = 0;
 };
 
@@ -388,15 +384,15 @@ struct ChatEngineEventData {
     int audio_route;
     int magic_id;
 
-	int audio_record_rate;
-	int audio_playout_rate;
+  int audio_record_rate;
+  int audio_playout_rate;
   int audio_read_in_size;
   int audio_read_out_size;
-	int audio_send_frame_rate;
-	int audio_send_packet_rate;
-	int audio_recv_packet_rate;
-	unsigned int encoding_time;
-	unsigned int decoding_time;
+  int audio_send_frame_rate;
+  int audio_send_packet_rate;
+  int audio_recv_packet_rate;
+  unsigned int encoding_time;
+  unsigned int decoding_time;
 
 };
 ChatEngineEventData& GetEngineEventData();
@@ -434,9 +430,9 @@ public:
 
     enum DTX_MODE
     {
-        DTX_OFF = 0,		//no dtx
-        DTX_ON_ZERO_PAYLOAD = 1,			//dtx enabled, zero payload package sent when silience
-        DTX_ON_PACK_NOT_SEND = 2	//dtx enabled, not sending package when silience
+        DTX_OFF = 0,    //no dtx
+        DTX_ON_ZERO_PAYLOAD = 1,      //dtx enabled, zero payload package sent when silience
+        DTX_ON_PACK_NOT_SEND = 2  //dtx enabled, not sending package when silience
     };
 
     enum ReturnCodes {
@@ -445,13 +441,13 @@ public:
         KPacketExpire = 1,
     };
 
-	// mode 0: host interactive mode, 1: host solo mode, 2: receive mode
-	enum SPECIFIC_MODE
-	{
-		kModeHostInteractive = 0,
-		kModeHostSolo = 1,
-		kModeAudience = 2,
-	};
+  // mode 0: host interactive mode, 1: host solo mode, 2: receive mode
+  enum SPECIFIC_MODE
+  {
+    kModeHostInteractive = 0,
+    kModeHostSolo = 1,
+    kModeAudience = 2,
+  };
 
     virtual ~IAudioEngine(){}
     virtual int init() = 0;
@@ -765,102 +761,102 @@ public:
 class IVideoFrame
 {
 public:
-	enum PLANE_TYPE {
-		Y_PLANE = 0,
-		U_PLANE = 1,
-		V_PLANE = 2,
-		NUM_OF_PLANES = 3
-	};
-	enum VIDEO_TYPE {
-		VIDEO_TYPE_UNKNOWN = 0,
-		VIDEO_TYPE_I420 = 1,
-		VIDEO_TYPE_IYUV = 2,
-		VIDEO_TYPE_RGB24 = 3,
-		VIDEO_TYPE_ABGR = 4,
-		VIDEO_TYPE_ARGB = 5,
-		VIDEO_TYPE_ARGB4444 = 6,
-		VIDEO_TYPE_RGB565 = 7,
-		VIDEO_TYPE_ARGB1555 = 8,
-		VIDEO_TYPE_YUY2 = 9,
-		VIDEO_TYPE_YV12 = 10,
-		VIDEO_TYPE_UYVY = 11,
-		VIDEO_TYPE_MJPG = 12,
-		VIDEO_TYPE_NV21 = 13,
-		VIDEO_TYPE_NV12 = 14,
-		VIDEO_TYPE_BGRA = 15,
-		VIDEO_TYPE_RGBA = 16,
-	};
-	virtual void release() = 0;
-	virtual const unsigned char* buffer(PLANE_TYPE type) const = 0;
+  enum PLANE_TYPE {
+    Y_PLANE = 0,
+    U_PLANE = 1,
+    V_PLANE = 2,
+    NUM_OF_PLANES = 3
+  };
+  enum VIDEO_TYPE {
+    VIDEO_TYPE_UNKNOWN = 0,
+    VIDEO_TYPE_I420 = 1,
+    VIDEO_TYPE_IYUV = 2,
+    VIDEO_TYPE_RGB24 = 3,
+    VIDEO_TYPE_ABGR = 4,
+    VIDEO_TYPE_ARGB = 5,
+    VIDEO_TYPE_ARGB4444 = 6,
+    VIDEO_TYPE_RGB565 = 7,
+    VIDEO_TYPE_ARGB1555 = 8,
+    VIDEO_TYPE_YUY2 = 9,
+    VIDEO_TYPE_YV12 = 10,
+    VIDEO_TYPE_UYVY = 11,
+    VIDEO_TYPE_MJPG = 12,
+    VIDEO_TYPE_NV21 = 13,
+    VIDEO_TYPE_NV12 = 14,
+    VIDEO_TYPE_BGRA = 15,
+    VIDEO_TYPE_RGBA = 16,
+  };
+  virtual void release() = 0;
+  virtual const unsigned char* buffer(PLANE_TYPE type) const = 0;
 
-	// Copy frame: If required size is bigger than allocated one, new buffers of
-	// adequate size will be allocated.
-	// Return value: 0 on success ,-1 on error.
-	virtual int copyFrame(IVideoFrame** dest_frame) const = 0;
+  // Copy frame: If required size is bigger than allocated one, new buffers of
+  // adequate size will be allocated.
+  // Return value: 0 on success ,-1 on error.
+  virtual int copyFrame(IVideoFrame** dest_frame) const = 0;
 
-	// Convert frame
-	// Input:
-	//   - src_frame        : Reference to a source frame.
-	//   - dst_video_type   : Type of output video.
-	//   - dst_sample_size  : Required only for the parsing of MJPG.
-	//   - dst_frame        : Pointer to a destination frame.
-	// Return value: 0 if OK, < 0 otherwise.
-	// It is assumed that source and destination have equal height.
-	virtual int convertFrame(VIDEO_TYPE dst_video_type, int dst_sample_size, unsigned char* dst_frame) const = 0;
+  // Convert frame
+  // Input:
+  //   - src_frame        : Reference to a source frame.
+  //   - dst_video_type   : Type of output video.
+  //   - dst_sample_size  : Required only for the parsing of MJPG.
+  //   - dst_frame        : Pointer to a destination frame.
+  // Return value: 0 if OK, < 0 otherwise.
+  // It is assumed that source and destination have equal height.
+  virtual int convertFrame(VIDEO_TYPE dst_video_type, int dst_sample_size, unsigned char* dst_frame) const = 0;
 
-	// Get allocated size per plane.
-	virtual int allocated_size(PLANE_TYPE type) const = 0;
+  // Get allocated size per plane.
+  virtual int allocated_size(PLANE_TYPE type) const = 0;
 
-	// Get allocated stride per plane.
-	virtual int stride(PLANE_TYPE type) const = 0;
+  // Get allocated stride per plane.
+  virtual int stride(PLANE_TYPE type) const = 0;
 
-	// Get frame width.
-	virtual int width() const = 0;
+  // Get frame width.
+  virtual int width() const = 0;
 
-	// Get frame height.
-	virtual int height() const = 0;
+  // Get frame height.
+  virtual int height() const = 0;
 
-	// Get frame timestamp (90kHz).
-	virtual unsigned int timestamp() const = 0;
+  // Get frame timestamp (90kHz).
+  virtual unsigned int timestamp() const = 0;
 
-	// Get render time in milliseconds.
-	virtual int64_t render_time_ms() const = 0;
+  // Get render time in milliseconds.
+  virtual int64_t render_time_ms() const = 0;
 
-	// Return true if underlying plane buffers are of zero size, false if not.
-	virtual bool IsZeroSize() const = 0;
+  // Return true if underlying plane buffers are of zero size, false if not.
+  virtual bool IsZeroSize() const = 0;
 };
 
 class IExternalVideoRenderCallback
 {
 public:
-	virtual void onViewSizeChanged(int width, int height) = 0;
-	virtual void onViewDestroyed() = 0;
+  virtual void onViewSizeChanged(int width, int height) = 0;
+  virtual void onViewDestroyed() = 0;
 };
 
 struct ExternalVideoRenerContext
 {
-	IExternalVideoRenderCallback* renderCallback;
-	void* view;
-	int renderMode;
-	int zOrder;
-	float left;
-	float top;
-	float right;
-	float bottom;
+  IExternalVideoRenderCallback* renderCallback;
+  void* view;
+  int renderMode;
+  int zOrder;
+  float left;
+  float top;
+  float right;
+  float bottom;
 };
 
 class IExternalVideoRender
 {
 public:
-	virtual void release() = 0;
-	virtual int initialize() = 0;
-	virtual int deliverFrame(const IVideoFrame& videoFrame, int videoRotate, int deviceRotate) = 0;
+  virtual void release() = 0;
+  virtual int initialize() = 0;
+  virtual int deliverFrame(const IVideoFrame& videoFrame, int videoRotate, int deviceRotate) = 0;
 };
 
 class IExternalVideoRenderFactory
 {
 public:
-	virtual IExternalVideoRender* createRenderInstance(const ExternalVideoRenerContext& context) = 0;
+  virtual IExternalVideoRender* createRenderInstance(const ExternalVideoRenerContext& context) = 0;
 };
 } //namespace media
 } //namespace agora
@@ -879,8 +875,8 @@ public:
     virtual ~VideoSource() {}
     // output
     void (* mFuncOutputYuv)(void *receiver, void *nv21,
-		int width, int height,
-		int rotation, long long timestamp);
+    int width, int height,
+    int rotation, long long timestamp);
     void *mReceiver;
 };
 AGORAVOICE_DLLEXPORT void registerVideoSource(VideoSource *src);
@@ -905,8 +901,8 @@ AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API userManagerBindUserView(unsigned int u
 // clean all views from renderers; does not send message to VideoEngine (suppose engine is gone)
 AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API userManagerClearUserViews(void *priv);
 AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API setVideoRenderFactory(agora::media::IExternalVideoRenderFactory* factory);
-    
-typedef void (*RtmpCB)(const char *url, uint32_t type, uint32_t data);
+
+typedef void (*RtmpCB)(const char *url, unsigned int type, unsigned int data);
 AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API setRtmpCallback(RtmpCB cb);
 
 #ifdef __cplusplus

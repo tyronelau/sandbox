@@ -31,8 +31,8 @@ bool video_observer::onCaptureVideoFrame(uchar_t *yBuffer,
   return true;
 }
 
-bool video_observer::onRenderVideoFrame(uint_t uid, uchar_t *yBuffer,
-    uchar_t *uBuffer, uchar_t *vBuffer, uint_t width,
+bool video_observer::onRenderVideoFrame(uint_t uid, int rotation,
+    uchar_t *yBuffer, uchar_t *uBuffer, uchar_t *vBuffer, uint_t width,
     uint_t height, uint_t yStride, uint_t uStride,
     uint_t vStride) {
   // TODO: This function gets called each time the engine decoded a frame
