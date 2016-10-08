@@ -154,7 +154,7 @@ int event_loop::stop() {
 void event_loop::on_read_event(int fd, int events) {
   (void)events;
 
-  SAFE_LOG(INFO) << "On Read: " << fd;
+  // SAFE_LOG(INFO) << "On Read: " << fd;
   auto it = events_.find(fd);
   if (it == events_.end())
     return;

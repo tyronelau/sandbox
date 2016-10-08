@@ -3,6 +3,7 @@
 #include <cassert>
 #include <new>
 
+#include "base/safe_log.h"
 #include "base/time_util.h"
 #include "protocol/ipc_protocol.h"
 
@@ -35,7 +36,6 @@ bool audio_observer::onPlaybackFrame(void *audioSample, int nSamples,
   (void)nChannels;
   (void)samplesPerSec;
 
-  // TODO: add your processing here
   return true;
 }
 

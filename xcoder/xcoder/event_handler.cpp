@@ -48,6 +48,7 @@ event_handler::event_handler(uint32_t uid, const string &vendor_key,
     is_dual_(dual), frames_(&loop_, this, 128) {
   applite_ = NULL;
   joined_ = false;
+  timer_ = NULL;
 
   reader_ = new (std::nothrow)async_pipe_reader(&loop_, read_fd, this);
   writer_ = new (std::nothrow)async_pipe_writer(&loop_, write_fd, this);
@@ -60,6 +61,10 @@ event_handler::~event_handler() {
 
   delete reader_;
   delete writer_;
+
+  if (timer_) {
+    loop_.remove_timer(timer_);
+  }
 }
 
 #ifdef GOOGLE_PROFILE_FLAG
@@ -147,7 +152,21 @@ int event_handler::run() {
   return run_internal();
 }
 
+void event_handler::timer_callback(int fd, void *context) {
+  (void)fd;
+
+  event_handler *p = reinterpret_cast<event_handler *>(context);
+  p->on_timer();
+}
+
+void event_handler::on_timer() {
+  if (s_term_sig_) {
+    loop_.stop();
+  }
+}
+
 int event_handler::run_internal() {
+  timer_ = loop_.add_timer(500, event_handler::timer_callback, this);
   return loop_.run();
 
   // FIXME: run your event loop here.

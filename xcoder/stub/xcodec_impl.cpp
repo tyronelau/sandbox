@@ -54,7 +54,12 @@ Recorder* Recorder::CreateRecorder(RecorderCallback *callback) {
 
 RecorderImpl::RecorderImpl(RecorderCallback *callback) {
   joined_ = false;
+  stopped_ = false;
   callback_ = callback;
+
+  reader_ = NULL;
+  writer_ = NULL;
+  timer_ = NULL;
 }
 
 RecorderImpl::~RecorderImpl() {
@@ -64,6 +69,10 @@ RecorderImpl::~RecorderImpl() {
 
   if (writer_) {
     delete writer_;
+  }
+
+  if (timer_) {
+    loop_.remove_timer(timer_);
   }
 
   process_.stop();
@@ -148,12 +157,32 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
   return 0;
 }
 
+void RecorderImpl::timer_callback(int fd, void *context) {
+  (void)fd;
+
+  RecorderImpl *p = reinterpret_cast<RecorderImpl *>(context);
+  p->on_timer();
+}
+
+void RecorderImpl::on_timer() {
+  if (stopped_) {
+    loop_.stop();
+  }
+}
+
 int RecorderImpl::run_internal() {
+  timer_ = loop_.add_timer(500, &RecorderImpl::timer_callback, this);
   return loop_.run();
 }
 
 int RecorderImpl::LeaveChannel() {
-  return leave_channel();
+  if (std::this_thread::get_id() == thread_.get_id()) {
+    return leave_channel();
+  }
+
+  stopped_ = true;
+  thread_.join();
+  return 0;
 }
 
 int RecorderImpl::leave_channel() {
@@ -164,9 +193,6 @@ int RecorderImpl::leave_channel() {
 
   loop_.stop();
   thread_.detach();
-  // if (thread_.joinable() && thread_.get_id() != std::this_thread::get_id())
-  //   thread_.join();
-
   return 0;
 }
 
@@ -241,6 +267,7 @@ void RecorderImpl::on_audio_frame(protocol::audio_frame frame) {
   t.channels_ = 1;
   t.sample_bits_ = 16;
   t.buf_ = std::move(frame.data);
+  t.samples_ = static_cast<uint_t>(t.buf_.size() / 2);
 
   if (callback_) {
     callback_->AudioFrameReceived(frame.uid, &t);

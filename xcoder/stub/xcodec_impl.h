@@ -7,6 +7,7 @@
 #include "include/xcodec_interface.h"
 
 #include "base/async_pipe.h"
+#include "base/atomic.h"
 #include "base/event_loop.h"
 #include "base/process.h"
 #include "protocol/ipc_protocol.h"
@@ -37,6 +38,9 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
   virtual bool on_error(base::async_pipe_reader *reader, short events);
   virtual bool on_error(base::async_pipe_writer *writer, short events);
  private:
+  static void timer_callback(int fd, void *context);
+  void on_timer();
+
   int run_internal();
   int leave_channel();
 
@@ -49,14 +53,15 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
  private:
   std::thread thread_;
   base::event_loop loop_;
+  base::timer_event *timer_;
 
   base::async_pipe_reader *reader_;
   base::async_pipe_writer *writer_;
 
   base::process process_;
 
-  bool joined_;
-  bool stopped_;
+  atomic_bool_t joined_;
+  atomic_bool_t stopped_;
 
   RecorderCallback *callback_;
 };

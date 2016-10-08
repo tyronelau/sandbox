@@ -69,6 +69,9 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   event_handler& operator=(const event_handler &) = delete;
   event_handler& operator=(event_handler &&) = delete;
  private:
+  void on_timer();
+  static void timer_callback(int fd, void *context);
+ private:
   const uint32_t uid_;
   const std::string vendor_key_;
   const std::string channel_name_;
@@ -86,6 +89,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   base::async_pipe_writer *writer_;
   base::event_loop loop_;
 
+  base::timer_event *timer_;
   base::event_queue<frame_ptr_t> frames_;
 
   static atomic_bool_t s_term_sig_;
