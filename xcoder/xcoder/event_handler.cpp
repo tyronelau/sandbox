@@ -50,10 +50,10 @@ event_handler::event_handler(uint32_t uid, const string &vendor_key,
   joined_ = false;
   timer_ = NULL;
 
-  reader_ = NULL;
-  writer_ = NULL;
-  // reader_ = new (std::nothrow)async_pipe_reader(&loop_, read_fd, this);
-  // writer_ = new (std::nothrow)async_pipe_writer(&loop_, write_fd, this);
+  // reader_ = NULL;
+  // writer_ = NULL;
+  reader_ = new (std::nothrow)async_pipe_reader(&loop_, read_fd, this);
+  writer_ = new (std::nothrow)async_pipe_writer(&loop_, write_fd, this);
 }
 
 event_handler::~event_handler() {
