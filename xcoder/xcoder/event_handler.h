@@ -13,6 +13,8 @@
 #include "base/event_loop.h"
 #include "base/event_queue.h"
 
+#include "protocol/ipc_protocol.h"
+
 namespace agora {
 namespace recording {
 

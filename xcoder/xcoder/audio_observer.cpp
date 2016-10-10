@@ -48,7 +48,7 @@ bool audio_observer::onPlaybackFrameUid(unsigned int uid, void *audioSample,
   (void)nChannels;
   (void)samplesPerSec;
 
-  protocol::audio_frame *frame = new (std::nothrow)protocol::audio_frame;
+  protocol::audio_frame *frame = new protocol::audio_frame;
   frame->uid = uid;
   frame->frame_ms = static_cast<uint32_t>(base::now_ms());
   frame->channels = 1;

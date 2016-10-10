@@ -50,8 +50,10 @@ event_handler::event_handler(uint32_t uid, const string &vendor_key,
   joined_ = false;
   timer_ = NULL;
 
-  reader_ = new (std::nothrow)async_pipe_reader(&loop_, read_fd, this);
-  writer_ = new (std::nothrow)async_pipe_writer(&loop_, write_fd, this);
+  reader_ = NULL;
+  writer_ = NULL;
+  // reader_ = new (std::nothrow)async_pipe_reader(&loop_, read_fd, this);
+  // writer_ = new (std::nothrow)async_pipe_writer(&loop_, write_fd, this);
 }
 
 event_handler::~event_handler() {
@@ -119,8 +121,8 @@ int event_handler::run() {
 
   applite_->initializeEx(context);
   applite_->setLogCallback(true);
-  applite_->enableVideo();
 
+  applite_->setProfile("{\"audioEngine\":{\"useAudioExternalDevice\":true}}", true);
   applite_->setProfile("{\"audioEngine\":{\"audioSampleRate\":32000}}", true);
 
   if (is_dual_) {
@@ -128,6 +130,8 @@ int event_handler::run() {
   } else {
     applite_->setClientRole(rtc::CLIENT_ROLE_AUDIENCE);
   }
+
+  applite_->enableVideo();
 
   last_active_ts_ = now_ts();
 
@@ -238,7 +242,7 @@ void event_handler::onRtcStats(const rtc::RtcStats &stats) {
     last_active_ts_ = nowts;
   }
 
-  if (nowts - last_active_ts_ > 30) {
+  if (nowts - last_active_ts_ > 300) {
     LOG(WARN, "No users in channel for 30 seconds, aborting.");
     s_term_sig_ = true;
   }

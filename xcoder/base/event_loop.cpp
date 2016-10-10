@@ -183,7 +183,7 @@ void event_loop::on_error_event(int fd, int events) {
   if (it == events_.end())
     return;
 
-  SAFE_LOG(INFO) << "Error " << fd << events;
+  SAFE_LOG(INFO) << "Error " << fd << ", " << events;
 
   const event &e = it->second;
   if (e.error_callback)

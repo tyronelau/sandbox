@@ -51,7 +51,7 @@ bool video_observer::onRenderVideoFrame(uint_t uid, int rotation,
       << ", height: " << height;
 
   // FIXME
-  protocol::video_frame *frame = new (std::nothrow)protocol::video_frame;
+  protocol::video_frame *frame = new protocol::video_frame;
   frame->uid = uid;
   frame->frame_ms = static_cast<uint32_t>(base::now_ms());
   frame->width = static_cast<uint16_t>(width);

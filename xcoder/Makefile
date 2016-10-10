@@ -12,17 +12,17 @@ RELEASE_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -DNDEB
 												-DGIT_DESC=\"`git rev-parse HEAD`\" -O3 \
 												-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden
 
-DEBUG_CFLAGS        = -pipe -O0 -Wall -W -fPIC -g -fno-omit-frame-pointer -fvisibility=hidden -Wconversion # -fsanitize=address -Wconversion
+DEBUG_CFLAGS        = -pipe -O0 -Wall -W -fPIC -g -fvisibility=hidden -Wconversion -fsanitize=address #-Wconversion
 DEBUG_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -Wconversion \
 											-DGIT_DESC=\"`git rev-parse HEAD`\" -O0 \
-											-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden # -fsanitize=address
+											-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden -fsanitize=address
 
 INCPATH       =  -Iinternal -I.
 #LINK          = /opt/rh/devtoolset-2/root/usr/bin/g++
 LINK  = g++
 LDFLAGS        = -static-libgcc -static-libstdc++  # -Wl,-Bstatic,-lc -Wl,-Bstatic,-lm -Wl,-Bdynamic
 
-DEBUG_LINK_LIBS = -levent -levent_thread # -lasan 
+DEBUG_LINK_LIBS = -levent -levent_thread -lasan 
 
 AR            = ar cqs
 
@@ -107,12 +107,12 @@ $(DBG_BASE_TARGET): $(DBG_BASE_OBJECTS)
 $(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_XCODER_OBJECTS) \
-		-Llibs -L$(DBG_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread
+		-Llibs -L$(DBG_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread -lasan
 
 $(DBG_TEST_TARGET): $(DBG_STUB_TARGET) $(DBG_BASE_TARGET) $(DBG_TEST_OBJECTS)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_TEST_OBJECTS) \
-		-Llibs -L$(DBG_BIN_PATH) -lstub -lbase -pthread -lpthread
+		-Llibs -L$(DBG_BIN_PATH) -lstub -lbase -pthread -lpthread -lasan
 
 $(DBG_STUB_TARGET): $(DBG_STUB_OBJECTS)
 	@mkdir -p $(dir $@)
