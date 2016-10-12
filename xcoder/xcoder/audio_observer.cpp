@@ -36,6 +36,17 @@ bool audio_observer::onPlaybackFrame(void *audioSample, int nSamples,
   (void)nChannels;
   (void)samplesPerSec;
 
+  protocol::audio_frame *frame = new protocol::audio_frame;
+  frame->uid = 0;
+  frame->frame_ms = static_cast<uint32_t>(base::now_ms());
+  frame->channels = 1;
+  frame->bits = 16;
+  frame->sample_rates = samplesPerSec;
+
+  size_t size = nSamples * nBytesPerSample * nChannels;
+  frame->data.assign(reinterpret_cast<const char *>(audioSample), size);
+
+  queue_->push(frame_ptr_t(frame));
   return true;
 }
 
