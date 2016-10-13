@@ -16,7 +16,7 @@
 #include "protocol/ipc_protocol.h"
 
 namespace agora {
-namespace recording {
+namespace xcodec {
 
 class audio_observer;
 class video_observer;

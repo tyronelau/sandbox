@@ -10,23 +10,17 @@ namespace base {
 class packet;
 };
 
-namespace recording {
+namespace xcodec {
 
 class audio_observer : public media::IAudioFrameObserver {
   typedef std::unique_ptr<base::packet> frame_ptr_t;
  public:
   explicit audio_observer(base::event_queue<frame_ptr_t> *frame_queue);
 
-  virtual bool onRecordFrame(void *audioSample, int nSamples,
-      int nBytesPerSample, int nChannels, int samplesPerSec);
-
-  // audio mixed PCM data received from the Engine.
-  virtual bool onPlaybackFrame(void *audioSample, int nSamples,
-      int nBytesPerSample, int nChannels, int samplesPerSec);
-
-  // Decoded unmixed PCM data from User |uid|
-  virtual bool onPlaybackFrameUid(unsigned int uid, void *audioSample,
-      int nSamples, int nBytesPerSample, int nChannels, int samplesPerSec);
+  virtual bool onRecordAudioFrame(AudioFrame &audioFrame);
+  virtual bool onPlaybackAudioFrame(AudioFrame &audioFrame);
+  virtual bool onPlaybackAudioFrameBeforeMixing(unsigned int uid,
+      AudioFrame &audioFrame);
  private:
   base::event_queue<frame_ptr_t> *queue_;
 };

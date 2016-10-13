@@ -39,16 +39,18 @@ class IRtcEngineEventHandlerEx : public IRtcEngineEventHandler
 public:
     virtual void onMediaEngineLoadSuccess() {}
     virtual void onMediaEngineStartCallSuccess() {}
-    virtual void onAudioTransportQuality(uid_t uid, unsigned short delay, unsigned short lost) {
-        (void)uid;
-        (void)delay;
-        (void)lost;
+    virtual void onAudioTransportQuality(uid_t uid, unsigned int bitrate, unsigned short delay, unsigned short lost) {
+      (void)uid;
+      (void)bitrate;
+      (void)delay;
+      (void)lost;
     }
 
-    virtual void onVideoTransportQuality(uid_t uid, unsigned short delay, unsigned short lost) {
-        (void)uid;
-        (void)delay;
-        (void)lost;
+    virtual void onVideoTransportQuality(uid_t uid, unsigned int bitrate, unsigned short delay, unsigned short lost) {
+      (void)uid;
+      (void)bitrate;
+      (void)delay;
+      (void)lost;
     }
 
     virtual void onRecap(const char* recapData, int length) {
@@ -69,38 +71,22 @@ public:
         (void)message;
         (void)length;
     }
-	/**
-	* when vendor message received, the function will be called
-	* @param [in] uid
-	*        UID of the remote user
-	* @param [in] data
-	*        the message data
-	* @param [in] length
-	*        the message length, in bytes
-	*        frame rate
-	*/
-	virtual void onVendorMessage(uid_t uid, const char* data, size_t length) {
-		(void)uid;
-		(void)data;
-		(void)length;
-	}
 };
 
 struct RtcEngineContextEx {
     IRtcEngineEventHandler* eventHandler;
     bool isExHandler;
-    const char* vendorKey;
+    const char* appId;
 	void* context;
-	APPLICATION_CATEGORY_TYPE applicationCategory;
 	std::string deviceId;
     std::string configDir;
     std::string dataDir;
+	std::string pluginDir;
 	RtcEngineContextEx()
 		:eventHandler(NULL)
 		, isExHandler(false)
-		, vendorKey(NULL)
+		, appId(NULL)
 		, context(NULL)
-		, applicationCategory(APPLICATION_CATEGORY_COMMUNICATION)
 	{}
 };
 
@@ -120,52 +106,31 @@ public:
     static const char* getSdkVersion(int* build);
 public:
     virtual ~IRtcEngineEx() {}
-    virtual void release2() = 0;
     virtual int initializeEx(const RtcEngineContextEx& context) = 0;
     virtual int setVideoCanvas(const VideoCanvas& canvas) = 0;
     virtual int setParameters(const char* parameters) = 0;
-	/**
-	* get multiple parameters.
-	*/
-	virtual int getParameters(const char* key, any_document_t& result) = 0;
+    /**
+    * get multiple parameters.
+    */
+    virtual int getParameters(const char* key, any_document_t& result) = 0;
     virtual int setProfile(const char* profile, bool merge) = 0;
     virtual int getProfile(any_document_t& result) = 0;
     virtual int notifyNetworkChange(agora::commons::network::network_info_t&& networkInfo) = 0;
-	/**
-	* enable the vendor message, sending and receiving
-	* @return return 0 if success or an error code
-	*/
-	virtual int enableVendorMessage() = 0;
+    virtual int sendReportMessage(const char* data, size_t length, int type) = 0;
+    virtual int getOptionsByVideoProfile(int profile, VideoNetOptions& options) = 0;
+    virtual RtcContext* getRtcContext() = 0;
+    virtual int setLogCallback(bool enabled) = 0;
+    virtual int makeQualityReportUrl(const char* channel, uid_t listenerUid, uid_t speakerUid, QUALITY_REPORT_FORMAT_TYPE format, agora::util::AString& url) = 0;
 
-	/**
-	* disable the vendor message, sending and receiving
-	* @return return 0 if success or an error code
-	*/
-	virtual int disableVendorMessage() = 0;
+    /**
+    * get SHA1 values of source files for building the binaries being used, for bug tracking.
+    */
+    virtual const char* getSourceVersion() const = 0;
 
-	/**
-	* broadcast the vendor message in the channel
-	* @param [in] data
-	*        the message data
-	* @param [in] length
-	*        the message length, in bytes
-	* @return return 0 if success or an error code
-	*/
-	virtual int sendVendorMessage(const char* data, size_t length) = 0;
-  virtual int sendReportMessage(const char* data, size_t length, int type) = 0;
-  virtual int getOptionsByVideoProfile(int profile, VideoNetOptions& options) = 0;
-  virtual RtcContext* getRtcContext() = 0;
-  virtual int setLogCallback(bool enabled) = 0;
-  virtual int makeQualityReportUrl(const char* channel, uid_t listenerUid, uid_t speakerUid, QUALITY_REPORT_FORMAT_TYPE format, agora::util::AString& url) = 0;
+    virtual int reportWebAgentVideoStats(const WebAgentVideoStats& stats) = 0;
 
-  /**
-  * get SHA1 values of source files for building the binaries being used, for bug tracking.
-  */
-	virtual const char* getSourceVersion() const = 0;
-
-	virtual int reportWebAgentVideoStats(const WebAgentVideoStats& stats) = 0;
-
-	virtual void printLog(LOG_FILTER_TYPE level, const char* message) = 0;
+    virtual void printLog(LOG_FILTER_TYPE level, const char* message) = 0;
+    virtual int setVideoProfileEx(int width, int height, int frameRate, int bitrate) = 0;
 };
 
 class RtcEngineParametersEx : public RtcEngineParameters
@@ -174,16 +139,6 @@ public:
     RtcEngineParametersEx(IRtcEngine& engine)
         :RtcEngineParameters(engine)
     {}
-    int setVideoResolution(int width, int height) {
-        return setObject("che.video.local.resolution", "{\"width\":%d,\"height\":%d}", width, height);
-    }
-    int setVideoMaxBitrate(int bitrate) {
-        return parameter()->setInt("che.video.local.max_bitrate", bitrate);
-    }
-    //call before joining channel
-    int setVideoMaxFrameRate(int frameRate) {
-        return setProfile("{\"audioEngine\":{\"maxVideoFrameRate\":%d}}", frameRate);
-    }
     int enableAudioQualityIndication(bool enabled) {
         return parameter()->setBool("rtc.audio_quality_indication", enabled);
     }
@@ -256,8 +211,8 @@ public:
         : m_firstInit(true)
         , m_lib(NULL)
         , m_dllName(dllname)
-        , m_pfnCreateAgoraRtcEngine(NULL)
-		, m_pfnGetAgoraRtcEngineVersion(NULL)
+        , m_pfnCreateAgoraRtcEngine(nullptr)
+		, m_pfnGetAgoraRtcEngineVersion(nullptr)
     {
     }
 
@@ -295,8 +250,8 @@ public:
 #endif
             m_lib = NULL;
         }
-        m_pfnCreateAgoraRtcEngine = NULL;
-		m_pfnGetAgoraRtcEngineVersion = NULL;
+        m_pfnCreateAgoraRtcEngine = nullptr;
+		m_pfnGetAgoraRtcEngineVersion = nullptr;
     }
 
     ~RtcEngineLibHelper()
@@ -315,7 +270,7 @@ public:
     }
 	const char* getVersion(int* build)
 	{
-		return m_pfnGetAgoraRtcEngineVersion ? m_pfnGetAgoraRtcEngineVersion(build) : NULL;
+		return m_pfnGetAgoraRtcEngineVersion ? m_pfnGetAgoraRtcEngineVersion(build) : nullptr;
 	}
 private:
     bool m_firstInit;

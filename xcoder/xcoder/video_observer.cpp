@@ -7,23 +7,14 @@
 #include "protocol/ipc_protocol.h"
 
 namespace agora {
-namespace recording {
+namespace xcodec {
 
 video_observer::video_observer(base::event_queue<frame_ptr_t> *frame_queue) {
   queue_ = frame_queue;
 }
 
-bool video_observer::onCaptureVideoFrame(uchar_t *yBuffer,
-    uchar_t *uBuffer, uchar_t *vBuffer, uint_t width,
-    uint_t height, uint_t yStride, uint_t uStride, uint_t vStride) {
-  (void)yBuffer;
-  (void)uBuffer;
-  (void)vBuffer;
-  (void)width;
-  (void)height;
-  (void)yStride;
-  (void)uStride;
-  (void)vStride;
+bool video_observer::onCaptureVideoFrame(VideoFrame &frame) {
+  (void)frame;
 
   assert(false);
   SAFE_LOG(WARN) << "This function should not be called";
@@ -31,70 +22,48 @@ bool video_observer::onCaptureVideoFrame(uchar_t *yBuffer,
   return true;
 }
 
-bool video_observer::onRenderVideoFrame(uint_t uid, int rotation,
-    uchar_t *yBuffer, uchar_t *uBuffer, uchar_t *vBuffer, uint_t width,
-    uint_t height, uint_t yStride, uint_t uStride,
-    uint_t vStride) {
+bool video_observer::onRenderVideoFrame(uint_t uid, VideoFrame &frame) {
   // TODO: This function gets called each time the engine decoded a frame
   // coming from User |uid|. Save the yuv buffer for your own processing.
-  (void)uid;
-  (void)yBuffer;
-  (void)uBuffer;
-  (void)vBuffer;
-  (void)width;
-  (void)height;
-  (void)yStride;
-  (void)uStride;
-  (void)vStride;
+  const void *yBuffer = frame.yBuffer;
+  const void *uBuffer = frame.uBuffer;
+  const void *vBuffer = frame.vBuffer;
+  int width = frame.width;
+  int height = frame.height;
+  int yStride = frame.yStride;
+  int uStride = frame.uStride;
+  int vStride = frame.vStride;
 
   SAFE_LOG(DEBUG) << "Frame received: " << uid << ", width: " << width
       << ", height: " << height;
 
   // FIXME
-  protocol::video_frame *frame = new protocol::video_frame;
-  frame->uid = uid;
-  frame->frame_ms = static_cast<uint32_t>(base::now_ms());
-  frame->width = static_cast<uint16_t>(width);
-  frame->height = static_cast<uint16_t>(height);
-  frame->ystride = static_cast<uint16_t>(yStride);
-  frame->ustride = static_cast<uint16_t>(uStride);
-  frame->vstride = static_cast<uint16_t>(vStride);
+  protocol::video_frame *f = new protocol::video_frame;
+  f->uid = uid;
+  f->frame_ms = static_cast<uint32_t>(base::now_ms());
+  f->width = static_cast<uint16_t>(width);
+  f->height = static_cast<uint16_t>(height);
+  f->ystride = static_cast<uint16_t>(yStride);
+  f->ustride = static_cast<uint16_t>(uStride);
+  f->vstride = static_cast<uint16_t>(vStride);
 
   size_t y_size = height * yStride;
   size_t u_size = height * uStride / 2;
   size_t v_size = height * vStride / 2;
 
-  std::string &data = frame->data;
+  std::string &data = f->data;
   data.reserve(y_size + u_size + v_size);
 
-  const char *start = reinterpret_cast<char *>(yBuffer);
+  const char *start = reinterpret_cast<const char *>(yBuffer);
   data.insert(data.end(), start, start + y_size);
 
-  start = reinterpret_cast<char *>(uBuffer);
+  start = reinterpret_cast<const char *>(uBuffer);
   data.insert(data.end(), start, start + u_size);
 
-  start = reinterpret_cast<char *>(vBuffer);
+  start = reinterpret_cast<const char *>(vBuffer);
   data.insert(data.end(), start, start + v_size);
 
-  queue_->push(frame_ptr_t(frame));
-  return true;
-}
-
-bool video_observer::onExternalVideoFrame(uchar_t *yBuffer, uchar_t *uBuffer,
-    uchar_t *vBuffer, uint_t width, uint_t height, uint_t yStride,
-    uint_t uStride, uint_t vStride) {
-  (void)yBuffer;
-  (void)uBuffer;
-  (void)vBuffer;
-  (void)width;
-  (void)height;
-  (void)yStride;
-  (void)uStride;
-  (void)vStride;
-
-  assert(false);
-  SAFE_LOG(WARN) << "This function should not be called";
-
+  queue_->push(frame_ptr_t(f));
   return true;
 }
 

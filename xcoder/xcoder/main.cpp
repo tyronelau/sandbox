@@ -18,7 +18,7 @@
 using std::string;
 using namespace agora;
 using namespace agora::base;
-using namespace agora::recording;
+using namespace agora::xcodec;
 
 int main(int argc, char *argv[]) {
   uint32_t uid = 0;
@@ -57,6 +57,6 @@ int main(int argc, char *argv[]) {
   LOG(INFO, "uid %" PRIu32 " from vendor %s is joining channel %s",
       uid, key.c_str(), name.c_str());
 
-  event_handler handler(uid, key, name, dual, read_fd, write_fd);
+  event_handler handler(uid, key, name, dual, read_fd, write_fd, !encoded);
   return handler.run();
 }

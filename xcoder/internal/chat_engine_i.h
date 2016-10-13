@@ -1,7 +1,7 @@
 #ifndef __AGORAVOICE_CHAT_ENGINE_I_H__
 #define __AGORAVOICE_CHAT_ENGINE_I_H__
 #include <string>
-
+#include "IAgoraMediaEngine.h"
 
 // Usage example, omitting error checking:
 //
@@ -216,8 +216,13 @@ public:
       int rendererRecvFrames;
       int decodeTimeMs;
       int duration;
+      int decodedQP;     // Add the QP reportor of decoder
       unsigned int maxRenderInterval;
       unsigned int lastRenderMs;
+      unsigned int minFrameNumber;
+      unsigned int maxFrameNumber;
+      unsigned int freezeCnt;
+      int freezeTimeMs;
 
       void reset() {
         uid = 0;
@@ -235,6 +240,11 @@ public:
         recvPkgNumber = 0;
         duration = 0;
         maxRenderInterval = 0;
+        decodedQP = 0;
+        minFrameNumber = 0xFFFFFFFF;
+        maxFrameNumber = 0;
+        freezeCnt = 0;
+        freezeTimeMs = 0;
       }
     };
 
@@ -272,7 +282,7 @@ public:
     };
 
     virtual int sendVideoPacket(const PacketInfo& info) = 0;
-    virtual int sendVideoRtcpPacket(unsigned int uid, const void* packet, unsigned short packetLen) = 0;
+    virtual int sendVideoRtcpPacket(unsigned int uid, const void* packet, unsigned short packetLen, bool isToVos) = 0;
     virtual void onRemoteFirstFrameDrawed(int viewIndex, unsigned int uid, int width, int height) = 0;
     virtual void onLocalFirstFrameDrawed(int width, int height) = 0;
     virtual void onRemoteFirstFrameDecoded(unsigned int uid, int width, int height) = 0;
@@ -280,22 +290,11 @@ public:
     virtual void onVideoStat(const LocalVideoStat& localStat, RemoteVideoStat* remoteStat, int remoteCount) = 0;
     virtual void switchVideoStream(unsigned int uid, VideoStreamType stream) = 0;
     virtual void onBandWidthLevelChanged(int level) = 0;
-    virtual void onVideoViewSizeChanged(int userID, int newWidth, int newHeight){};
-};
-
-class IVideoFrameObserver
-{
-public:
-    virtual bool onCaptureVideoFrame(unsigned char* yBuffer, unsigned char* uBuffer, unsigned char* vBuffer,
-                                    unsigned int width, unsigned int height,
-                                    unsigned int yStride, unsigned int uStride, unsigned int vStride) = 0;
-    virtual bool onRenderVideoFrame(unsigned int uid, int rotation,
-                                    unsigned char* yBuffer, unsigned char* uBuffer, unsigned char* vBuffer,
-                                    unsigned int width, unsigned int height,
-                                    unsigned int yStride, unsigned int uStride, unsigned int vStride) = 0;
-    virtual bool onExternalVideoFrame(unsigned char* yBuffer, unsigned char* uBuffer, unsigned char* vBuffer,
-                                      unsigned int width, unsigned int height,
-                                      unsigned int yStride, unsigned int uStride, unsigned int vStride) = 0;
+    virtual void onVideoViewSizeChanged(int userID, int newWidth, int newHeight){
+      (void)userID;
+      (void)newWidth;
+      (void)newHeight;
+    }
 };
 
 class IJitterStatistics
@@ -317,6 +316,8 @@ public:
         unsigned short recvExpiredFrameNumber;
         unsigned short toDecodeFrameNumber;
         unsigned short decodedFrameNumber;
+        unsigned short freezeCnt;
+        short          freezeTimeMs;
     };
     struct SpeakerInfo {
         unsigned int uid;
@@ -335,7 +336,9 @@ public:
         RECORDING_ERROR = 0,
         PLAYOUT_ERROR = 1,
         RECORDING_WARNING = 2,
-        PLAYOUT_WARNING = 3
+        PLAYOUT_WARNING = 3,
+        // Audio file mixing is done
+        AUDIO_FILE_MIX_FINISH = 10
     };
     enum DEVICE_STATE_TYPE {
         DEVICE_STATE_ACTIVE = 1,
@@ -359,14 +362,6 @@ public:
     virtual void OnVideoDeviceStateChange(const char deviceId[128], int deviceType, int newState) = 0;
 };
 
-class IAudioFrameObserver
-{
-public:
-  virtual bool onRecordFrame(void *audioSample, int nSamples, int nBytesPerSample, int nChannels, int samplesPerSec) = 0;
-  virtual bool onPlaybackFrame(void *audioSample, int nSamples, int nBytesPerSample, int nChannels, int samplesPerSec) = 0;
-  virtual bool onPlaybackFrameUid(unsigned int uid, void *audioSample, int nSamples, int nBytesPerSample, int nChannels, int samplesPerSec) = 0;
-};
-
 #define EVENT_JITTER_COUNT 5
 struct ChatEngineEventData {
     int overruns;
@@ -376,8 +371,10 @@ struct ChatEngineEventData {
     int lastError;
     int apm_buffer;
     int aec_delay;
-    int large_echo_prob;
-    int saturation_prob;
+    int aec_erl;
+    int aec_erle;
+    int aec_frac;
+    int aec_quality;
     int signal_level;
     int howling_state;
     int audio_engine_stat[3];
@@ -386,8 +383,6 @@ struct ChatEngineEventData {
 
   int audio_record_rate;
   int audio_playout_rate;
-  int audio_read_in_size;
-  int audio_read_out_size;
   int audio_send_frame_rate;
   int audio_send_packet_rate;
   int audio_recv_packet_rate;
@@ -436,18 +431,10 @@ public:
     };
 
     enum ReturnCodes {
-        kOK = 0,
-        kFail = -1,
-        KPacketExpire = 1,
+      kOK = 0,
+      kFail = -1,
+      KPacketExpire = 1,
     };
-
-  // mode 0: host interactive mode, 1: host solo mode, 2: receive mode
-  enum SPECIFIC_MODE
-  {
-    kModeHostInteractive = 0,
-    kModeHostSolo = 1,
-    kModeAudience = 2,
-  };
 
     virtual ~IAudioEngine(){}
     virtual int init() = 0;
@@ -513,6 +500,7 @@ public:
 
     virtual int setSpeakerStatus(bool enable) = 0;
     virtual int getPlayoutTS(unsigned int uid,int *playoutTS) = 0;
+	  virtual int queryGameSoundStatus(bool& requireSuppression) = 0;
 
     // enable/disable volume/level report
     // reportIntervalMs: designates the callback interval in milliseconds, 0 means disable
@@ -650,7 +638,7 @@ public:
     virtual int init() = 0;
     virtual int terminate() = 0;
     virtual int receiveNetPacket(unsigned int uid, const IVideoListener::PacketInfo& info) = 0;
-    virtual int receiveRtcpPacket(unsigned int uid, const void* packet, unsigned int packetSize) = 0;
+    virtual int receiveRtcpPacket(unsigned int uid, const void* packet, unsigned int packetSize, bool isFromVos) = 0;
     virtual int setListener(IVideoListener* listener) = 0;
     virtual int deregisterTransport() = 0;
     virtual void checkUserOffline() = 0;
@@ -700,21 +688,24 @@ public:
     virtual int setCaptureDevice(int index) = 0;
 
     virtual int setCaptureDevice(const char *deviceId) = 0;
-    virtual int setChannelProfileType(int type) = 0;
     virtual int requestEncodeStreamByUser(unsigned int uid, VideoStreamType type) = 0;
 
     // NOTE(liuyong): for live video only
     virtual int setVideoMinimumPlayout(unsigned int uid, int playoutMs) = 0;
+    virtual int setActualSendBitrate(int send_kbps, int retrans_kbps) = 0;
 };
 
 class IChatEngine
 {
 public:
-    enum CHANNEL_PROFILE_TYPE
+    // mode -1: not specified, 0: communication, 1: host interactive mode, 2: host solo mode, 3: receive mode
+    enum MEDIA_ENGINE_ROLE_TYPE
     {
-      CHANNEL_PROFILE_FREE = 0,
-      CHANNEL_PROFILE_BROADCASTER = 1,
-      CHANNEL_PROFILE_AUDIENCE = 2,
+        MEDIA_ENGINE_ROLE_UNKNOWN = -1,
+        MEDIA_ENGINE_ROLE_COMMUNICATION_PEER = 0,
+        MEDIA_ENGINE_ROLE_INTERACTIVE_BROADCASTER = 1,
+        MEDIA_ENGINE_ROLE_SOLO_BROADCASTER = 2,
+        MEDIA_ENGINE_ROLE_AUDIENCE = 3,
     };
 
     virtual void release() = 0;
@@ -735,7 +726,6 @@ public:
     virtual int setStringParameter(const char* key, const char* value) = 0;
     virtual int setObjectParameter(const char* key, const char* value) = 0;
     virtual int getParameter(const char* key, const char* args, util::AString& result) = 0;
-    virtual int setChannelProfileType(CHANNEL_PROFILE_TYPE type) = 0;
 };
 
 class ITraceCallback
@@ -758,106 +748,6 @@ public:
     virtual void flushTrace() = 0;
 };
 
-class IVideoFrame
-{
-public:
-  enum PLANE_TYPE {
-    Y_PLANE = 0,
-    U_PLANE = 1,
-    V_PLANE = 2,
-    NUM_OF_PLANES = 3
-  };
-  enum VIDEO_TYPE {
-    VIDEO_TYPE_UNKNOWN = 0,
-    VIDEO_TYPE_I420 = 1,
-    VIDEO_TYPE_IYUV = 2,
-    VIDEO_TYPE_RGB24 = 3,
-    VIDEO_TYPE_ABGR = 4,
-    VIDEO_TYPE_ARGB = 5,
-    VIDEO_TYPE_ARGB4444 = 6,
-    VIDEO_TYPE_RGB565 = 7,
-    VIDEO_TYPE_ARGB1555 = 8,
-    VIDEO_TYPE_YUY2 = 9,
-    VIDEO_TYPE_YV12 = 10,
-    VIDEO_TYPE_UYVY = 11,
-    VIDEO_TYPE_MJPG = 12,
-    VIDEO_TYPE_NV21 = 13,
-    VIDEO_TYPE_NV12 = 14,
-    VIDEO_TYPE_BGRA = 15,
-    VIDEO_TYPE_RGBA = 16,
-  };
-  virtual void release() = 0;
-  virtual const unsigned char* buffer(PLANE_TYPE type) const = 0;
-
-  // Copy frame: If required size is bigger than allocated one, new buffers of
-  // adequate size will be allocated.
-  // Return value: 0 on success ,-1 on error.
-  virtual int copyFrame(IVideoFrame** dest_frame) const = 0;
-
-  // Convert frame
-  // Input:
-  //   - src_frame        : Reference to a source frame.
-  //   - dst_video_type   : Type of output video.
-  //   - dst_sample_size  : Required only for the parsing of MJPG.
-  //   - dst_frame        : Pointer to a destination frame.
-  // Return value: 0 if OK, < 0 otherwise.
-  // It is assumed that source and destination have equal height.
-  virtual int convertFrame(VIDEO_TYPE dst_video_type, int dst_sample_size, unsigned char* dst_frame) const = 0;
-
-  // Get allocated size per plane.
-  virtual int allocated_size(PLANE_TYPE type) const = 0;
-
-  // Get allocated stride per plane.
-  virtual int stride(PLANE_TYPE type) const = 0;
-
-  // Get frame width.
-  virtual int width() const = 0;
-
-  // Get frame height.
-  virtual int height() const = 0;
-
-  // Get frame timestamp (90kHz).
-  virtual unsigned int timestamp() const = 0;
-
-  // Get render time in milliseconds.
-  virtual int64_t render_time_ms() const = 0;
-
-  // Return true if underlying plane buffers are of zero size, false if not.
-  virtual bool IsZeroSize() const = 0;
-};
-
-class IExternalVideoRenderCallback
-{
-public:
-  virtual void onViewSizeChanged(int width, int height) = 0;
-  virtual void onViewDestroyed() = 0;
-};
-
-struct ExternalVideoRenerContext
-{
-  IExternalVideoRenderCallback* renderCallback;
-  void* view;
-  int renderMode;
-  int zOrder;
-  float left;
-  float top;
-  float right;
-  float bottom;
-};
-
-class IExternalVideoRender
-{
-public:
-  virtual void release() = 0;
-  virtual int initialize() = 0;
-  virtual int deliverFrame(const IVideoFrame& videoFrame, int videoRotate, int deviceRotate) = 0;
-};
-
-class IExternalVideoRenderFactory
-{
-public:
-  virtual IExternalVideoRender* createRenderInstance(const ExternalVideoRenerContext& context) = 0;
-};
 } //namespace media
 } //namespace agora
 
@@ -871,12 +761,14 @@ extern "C"
 class VideoSource
 {
 public:
-    VideoSource() { mFuncOutputYuv = NULL; mReceiver = NULL; }
+    VideoSource() { mFuncOutputYuvEx = NULL; mReceiver = NULL; }
     virtual ~VideoSource() {}
-    // output
-    void (* mFuncOutputYuv)(void *receiver, void *nv21,
-    int width, int height,
-    int rotation, long long timestamp);
+    // callback
+    void (* mFuncOutputYuvEx)(void *receiver, void *buffer,
+                            int width, int height,
+                            int cropLeft, int cropTop, int cropRight, int cropBottom,
+                            int rotation, long long timestamp,
+                            int fmt); // fmt: 1: I420
     void *mReceiver;
 };
 AGORAVOICE_DLLEXPORT void registerVideoSource(VideoSource *src);
@@ -900,11 +792,12 @@ AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API  userManagerPendingView(void *priv,
 AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API userManagerBindUserView(unsigned int uid, void *view, int renderMode, void *priv);
 // clean all views from renderers; does not send message to VideoEngine (suppose engine is gone)
 AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API userManagerClearUserViews(void *priv);
-AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API setVideoRenderFactory(agora::media::IExternalVideoRenderFactory* factory);
+AGORAVOICE_DLLEXPORT int CHAT_ENGINE_API registerVideoRenderFactory(agora::media::IExternalVideoRenderFactory* factory);
 
-typedef void (*RtmpCB)(const char *url, unsigned int type, unsigned int data);
-AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API setRtmpCallback(RtmpCB cb);
-
+#ifdef WEBRTC_ANDROID
+AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API setSharedContext(void * eglContext);
+AGORAVOICE_DLLEXPORT void CHAT_ENGINE_API setTextureId(int id, void* eglContext, int width, int height, int64_t ts);
+#endif
 #ifdef __cplusplus
 }
 #endif

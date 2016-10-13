@@ -10,7 +10,7 @@ namespace base {
 class packet;
 };
 
-namespace recording {
+namespace xcodec {
 
 class video_observer : public media::IVideoFrameObserver {
   typedef std::unique_ptr<base::packet> frame_ptr_t;
@@ -20,18 +20,8 @@ class video_observer : public media::IVideoFrameObserver {
   typedef unsigned char uchar_t;
   typedef unsigned int uint_t;
 
-  virtual bool onCaptureVideoFrame(uchar_t *yBuffer, uchar_t *uBuffer,
-      uchar_t *vBuffer, uint_t width, uint_t height,
-      uint_t yStride, uint_t uStride, uint_t vStride);
-
-  virtual bool onRenderVideoFrame(uint_t uid, int rotation, uchar_t *yBuffer,
-      uchar_t *uBuffer, uchar_t *vBuffer, uint_t width,
-      uint_t height, uint_t yStride, uint_t uStride,
-      uint_t vStride);
-
-  virtual bool onExternalVideoFrame(uchar_t *yBuffer, uchar_t *uBuffer,
-      uchar_t *vBuffer, uint_t width, uint_t height,
-      uint_t yStride, uint_t uStride, uint_t vStride);
+  virtual bool onCaptureVideoFrame(VideoFrame &frame);
+  virtual bool onRenderVideoFrame(unsigned int uid, VideoFrame &frame);
  private:
   base::event_queue<frame_ptr_t> *queue_;
 };

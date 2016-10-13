@@ -32,7 +32,7 @@ inline int32_t now_ts() {
 }
 
 namespace agora {
-namespace recording {
+namespace xcodec {
 
 using std::string;
 
@@ -95,8 +95,6 @@ void event_handler::cleanup() {
 }
 
 void event_handler::set_mosaic_mode(bool mosaic) {
-  mosaic_.store(mosaic);
-
   agora::rtc::AParameter msp(*applite_);
   msp->setBool("che.video.server_mode", mosaic);
 }
@@ -121,20 +119,21 @@ int event_handler::run() {
   rtc::RtcEngineContextEx context;
   context.eventHandler = this;
   context.isExHandler = true;
-  context.vendorKey = NULL;
+  context.appId = vendor_key_.c_str();
   context.context = NULL;
-  context.applicationCategory = rtc::APPLICATION_CATEGORY_LIVE_BROADCASTING;
 
   applite_->initializeEx(context);
   applite_->setLogCallback(true);
+  applite_->setChannelProfile(rtc::CHANNEL_PROFILE_LIVE_BROADCASTING);
 
   applite_->setProfile("{\"audioEngine\":{\"useAudioExternalDevice\":true}}", true);
   applite_->setProfile("{\"audioEngine\":{\"audioSampleRate\":32000}}", true);
 
+  applite_->setClientRole(rtc::CLIENT_ROLE_AUDIENCE, NULL);
+
   if (is_dual_) {
-    applite_->setClientRole(rtc::CLIENT_ROLE_DUAL_STREAM_AUDIENCE);
-  } else {
-    applite_->setClientRole(rtc::CLIENT_ROLE_AUDIENCE);
+    rtc::RtcEngineParameters param(*applite_);
+    param.enableDualStreamMode(true);
   }
 
   applite_->enableVideo();
@@ -158,7 +157,7 @@ int event_handler::run() {
     SAFE_LOG(ERROR) << "Failed to create the channel " << channel_name_;
     if (writer_) {
       protocol::recorder_error error;
-      error.error_code = kJoinFailed;
+      error.error_code = 1;
       error.reason = "Failed to create the channel";
 
       writer_->write_packet(error);
