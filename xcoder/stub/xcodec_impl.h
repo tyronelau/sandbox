@@ -26,9 +26,11 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
   explicit RecorderImpl(RecorderCallback *callback=NULL);
   virtual ~RecorderImpl();
 
+  // called by the SDK user, in the user thread.
   virtual int JoinChannel(const char *app_id, const char *channel_name,
       bool is_dual=false, uint_t uid=0);
 
+  // called by the SDK user, possilbly in either event or user thread.
   virtual int LeaveChannel();
   virtual int Destroy();
  private:

@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
   string key;
   string name;
   bool dual = false;
+  bool encoded = false;
   int read_fd = -1;
   int write_fd = -1;
 
@@ -36,6 +37,7 @@ int main(int argc, char *argv[]) {
   parser.add_long_opt("dual", &dual);
   parser.add_long_opt("write", &write_fd);
   parser.add_long_opt("read", &read_fd);
+  parser.add_long_opt("encoded", &encoded);
 
   if (!parser.parse_opts(argc, argv) || key.empty() || name.empty()) {
     std::ostringstream sout;

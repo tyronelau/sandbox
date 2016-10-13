@@ -72,6 +72,7 @@ struct Recorder {
   virtual int LeaveChannel() = 0;
 
   // should be called after |LeaveChannel|
+  // NOTE: DO NOT call |Destroy| in |RecorderCallback|.
   virtual int Destroy() = 0;
 };
 

@@ -150,6 +150,14 @@ int event_handler::run() {
   if (applite_->joinChannel(vendor_key_.c_str(), channel_name_.c_str(),
       NULL, uid_) < 0) {
     SAFE_LOG(ERROR) << "Failed to create the channel " << channel_name_;
+    if (writer_) {
+      protocol::recorder_error error;
+      error.error_code = kJoinFailed;
+      error.reason = "Failed to create the channel";
+
+      writer_->write_packet(error);
+    }
+
     return -1;
   }
 
@@ -243,7 +251,7 @@ void event_handler::onRtcStats(const rtc::RtcStats &stats) {
   }
 
   if (nowts - last_active_ts_ > 300) {
-    LOG(WARN, "No users in channel for 30 seconds, aborting.");
+    LOG(WARN, "No users in channel for 300 seconds, aborting.");
     s_term_sig_ = true;
   }
 }
