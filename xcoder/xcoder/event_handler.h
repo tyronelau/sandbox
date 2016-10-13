@@ -31,7 +31,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
       const std::string &vendor_key,
       const std::string &channel_name,
       bool is_dual, int read_fd,
-      int write_fd);
+      int write_fd, bool mosaic);
 
   ~event_handler();
 
@@ -63,6 +63,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
 
   void cleanup();
   void on_leave(int reason);
+  void set_mosaic_mode(bool mosaic);
 
   static void term_handler(int sig_no);
 
@@ -78,9 +79,11 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   const std::string vendor_key_;
   const std::string channel_name_;
   const bool is_dual_;
+  const bool mosaic_;
 
   atomic_bool_t joined_;
   int32_t last_active_ts_;
+
 
   rtc::IRtcEngineEx *applite_;
 

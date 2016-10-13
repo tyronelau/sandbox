@@ -1,5 +1,5 @@
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <cinttypes>
@@ -12,9 +12,10 @@
 
 #include "base/log.h"
 #include "base/opt_parser.h"
+
 #include "xcoder/event_handler.h"
 
-using namespace std;
+using std::string;
 using namespace agora;
 using namespace agora::base;
 using namespace agora::recording;

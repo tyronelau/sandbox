@@ -43,15 +43,14 @@ using base::unpacker;
 atomic_bool_t event_handler::s_term_sig_;
 
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
-    const string &channel_name, bool dual, int read_fd, int write_fd)
-    : uid_(uid), vendor_key_(vendor_key), channel_name_(channel_name),
-    is_dual_(dual), frames_(&loop_, this, 128) {
+    const string &channel_name, bool dual, int read_fd, int write_fd,
+    bool mosaic) : uid_(uid), vendor_key_(vendor_key),
+    channel_name_(channel_name), is_dual_(dual), mosaic_(mosaic),
+    frames_(&loop_, this, 128) {
   applite_ = NULL;
   joined_ = false;
   timer_ = NULL;
 
-  // reader_ = NULL;
-  // writer_ = NULL;
   reader_ = new (std::nothrow)async_pipe_reader(&loop_, read_fd, this);
   writer_ = new (std::nothrow)async_pipe_writer(&loop_, write_fd, this);
 }
@@ -93,6 +92,13 @@ void event_handler::cleanup() {
   }
 
   sleep(1);
+}
+
+void event_handler::set_mosaic_mode(bool mosaic) {
+  mosaic_.store(mosaic);
+
+  agora::rtc::AParameter msp(*applite_);
+  msp->setBool("che.video.server_mode", mosaic);
 }
 
 int event_handler::run() {
