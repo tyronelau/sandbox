@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   parser.add_long_opt("dual", &dual);
   parser.add_long_opt("write", &write_fd);
   parser.add_long_opt("read", &read_fd);
-  parser.add_long_opt("encoded", &encoded);
+  // parser.add_long_opt("encoded", &encoded);
 
   if (!parser.parse_opts(argc, argv) || key.empty() || name.empty()) {
     std::ostringstream sout;
@@ -57,6 +57,6 @@ int main(int argc, char *argv[]) {
   LOG(INFO, "uid %" PRIu32 " from vendor %s is joining channel %s",
       uid, key.c_str(), name.c_str());
 
-  event_handler handler(uid, key, name, dual, read_fd, write_fd);
+  event_handler handler(uid, key, name, dual, read_fd, write_fd, !encoded);
   return handler.run();
 }

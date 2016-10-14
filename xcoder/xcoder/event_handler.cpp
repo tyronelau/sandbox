@@ -95,7 +95,7 @@ void event_handler::cleanup() {
 }
 
 void event_handler::set_mosaic_mode(bool mosaic) {
-  mosaic_.store(mosaic);
+  // mosaic_.store(mosaic);
 
   agora::rtc::AParameter msp(*applite_);
   msp->setBool("che.video.server_mode", mosaic);
@@ -158,7 +158,7 @@ int event_handler::run() {
     SAFE_LOG(ERROR) << "Failed to create the channel " << channel_name_;
     if (writer_) {
       protocol::recorder_error error;
-      error.error_code = kJoinFailed;
+      error.error_code = 1;
       error.reason = "Failed to create the channel";
 
       writer_->write_packet(error);
