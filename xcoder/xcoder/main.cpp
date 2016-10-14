@@ -47,12 +47,12 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // if (read_fd <= 0 || write_fd <= 0) {
-  //   std::ostringstream sout;
-  //   parser.print_usage(argv[0], sout);
-  //   LOG(ERROR, "No pipe fd designated! %s", sout.str().c_str());
-  //   return -1;
-  // }
+  if (read_fd <= 0 || write_fd <= 0) {
+    std::ostringstream sout;
+    parser.print_usage(argv[0], sout);
+    LOG(ERROR, "No pipe fd designated! %s", sout.str().c_str());
+    return -1;
+  }
 
   LOG(INFO, "uid %" PRIu32 " from vendor %s is joining channel %s",
       uid, key.c_str(), name.c_str());
