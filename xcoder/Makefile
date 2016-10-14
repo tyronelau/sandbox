@@ -20,7 +20,7 @@ DEBUG_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -Wconver
 INCPATH       =  -Iinternal -I.
 #LINK          = /opt/rh/devtoolset-2/root/usr/bin/g++
 LINK  = g++
-LDFLAGS        = -static-libgcc -static-libstdc++  # -Wl,-Bstatic,-lc -Wl,-Bstatic,-lm -Wl,-Bdynamic
+LDFLAGS        = -g # -static-libgcc -static-libstdc++  # -Wl,-Bstatic,-lc -Wl,-Bstatic,-lm -Wl,-Bdynamic
 
 DEBUG_LINK_LIBS = -levent -levent_thread -lasan 
 
