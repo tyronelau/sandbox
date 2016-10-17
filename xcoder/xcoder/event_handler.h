@@ -5,6 +5,7 @@
 #include <string>
 
 #include "internal/rtc/IAgoraRtcEngine.h"
+#include "internal/ICodingModuleCallback.h"
 #include "internal/rtc/rtc_engine_i.h"
 
 #include "base/async_pipe.h"
@@ -20,18 +21,20 @@ namespace xcodec {
 
 class audio_observer;
 class video_observer;
+class peer_stream;
 
 typedef std::unique_ptr<base::packet> frame_ptr_t;
 
 class event_handler : private rtc::IRtcEngineEventHandlerEx,
     private base::pipe_read_listener, private base::pipe_write_listener,
-    private base::async_event_handler<frame_ptr_t> {
+    private base::async_event_handler<frame_ptr_t>,
+    private AgoraRTC::ICMFileObserver {
  public:
   event_handler(uint32_t uid,
       const std::string &vendor_key,
       const std::string &channel_name,
       bool is_dual, int read_fd,
-      int write_fd, bool mosaic);
+      int write_fd, bool decode);
 
   ~event_handler();
 
@@ -61,6 +64,12 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   // Inherited from |async_event_handler|
   virtual void on_event(frame_ptr_t frame);
 
+  // Inherited from |ICMFile|
+  virtual AgoraRTC::ICMFile* GetICMFileObject(unsigned int uid);
+  virtual int InsertRawAudioPacket(unsigned uid, const unsigned char *payload,
+      unsigned short payload_size, int payload_type, unsigned int timestamp,
+      unsigned short seq_no);
+
   void cleanup();
   void on_leave(int reason);
   void set_mosaic_mode(bool mosaic);
@@ -79,16 +88,16 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   const std::string vendor_key_;
   const std::string channel_name_;
   const bool is_dual_;
-  const bool mosaic_;
+  const bool decode_;
 
   atomic_bool_t joined_;
   int32_t last_active_ts_;
-
 
   rtc::IRtcEngineEx *applite_;
 
   std::unique_ptr<audio_observer> audio_;
   std::unique_ptr<video_observer> video_;
+  std::unordered_map<uint32_t, std::unique_ptr<peer_stream> > streams_;
 
   base::async_pipe_reader *reader_;
   base::async_pipe_writer *writer_;
@@ -98,8 +107,6 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   base::event_queue<frame_ptr_t> frames_;
 
   static atomic_bool_t s_term_sig_;
-  static const unsigned char kBytesPerSample = 2;
-  static const unsigned char kChannels = 1;
 };
 
 }

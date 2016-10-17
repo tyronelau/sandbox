@@ -40,12 +40,82 @@ using base::async_pipe_reader;
 using base::async_pipe_writer;
 using base::unpacker;
 
+class peer_stream : public AgoraRTC::ICMFile {
+ public:
+  explicit peer_stream(unsigned int uid=0);
+  virtual ~peer_stream();
+
+  // The following functions are left intentionally unimplemented.
+  virtual int startAudioRecord();
+  virtual int startVideoRecord();
+  virtual int stopAudioRecord();
+  virtual int stopVideoRecord();
+  virtual int setVideoRotation(int rotation);
+
+  virtual int onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
+      uint8_t *buffer, uint32_t length, uint32_t frame_num);
+
+  virtual int onEncodeVideo(uint32_t video_ts, uint8_t payload_type,
+      uint8_t *buffer, uint32_t length);
+
+  virtual int onDecodeAudio(uint32_t audio_ts, uint8_t payload_type,
+      uint8_t *buffer, uint32_t length);
+
+  virtual int onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
+      uint8_t *buffer, uint32_t length);
+ private:
+  unsigned uid_;
+};
+
+peer_stream::peer_stream(unsigned int uid) {
+  uid_ = uid;
+}
+
+peer_stream::~peer_stream() {
+}
+
+int peer_stream::startAudioRecord() {
+  return 0;
+}
+
+int peer_stream::startVideoRecord() {
+  return 0;
+}
+
+int peer_stream::stopAudioRecord() {
+  return 0;
+}
+
+int peer_stream::stopVideoRecord() {
+  return 0;
+}
+
+int peer_stream::setVideoRotation(int rotation) {
+  return 0;
+}
+
+int peer_stream::onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
+    uint8_t *buffer, uint32_t length, uint32_t frame_num) {
+}
+
+int peer_stream::onEncodeVideo(uint32_t video_ts, uint8_t payload_type,
+    uint8_t *buffer, uint32_t length, uint32_t frame_num) {
+}
+
+int peer_stream::onDecodeAudio(uint32_t audio_ts, uint8_t payload_type,
+    uint8_t *buffer, uint32_t length) {
+}
+
+int peer_stream::onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
+    uint8_t *buffer, uint32_t length) {
+}
+
 atomic_bool_t event_handler::s_term_sig_;
 
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
     const string &channel_name, bool dual, int read_fd, int write_fd,
-    bool mosaic) : uid_(uid), vendor_key_(vendor_key),
-    channel_name_(channel_name), is_dual_(dual), mosaic_(mosaic),
+    bool decode) : uid_(uid), vendor_key_(vendor_key),
+    channel_name_(channel_name), is_dual_(dual), decode_(decode),
     frames_(&loop_, this, 128) {
   applite_ = NULL;
   joined_ = false;
@@ -63,9 +133,9 @@ event_handler::~event_handler() {
   delete reader_;
   delete writer_;
 
-  if (timer_) {
-    loop_.remove_timer(timer_);
-  }
+  // if (timer_) {
+  //   loop_.remove_timer(timer_);
+  // }
 }
 
 #ifdef GOOGLE_PROFILE_FLAG
@@ -115,6 +185,7 @@ int event_handler::run() {
 
   registerAudioFrameObserver(audio_.get());
   registerVideoFrameObserver(video_.get());
+  RegisterICMFileObserver(this);
 
   rtc::RtcEngineContextEx context;
   context.eventHandler = this;
@@ -320,6 +391,23 @@ void event_handler::on_event(frame_ptr_t frame) {
   if (writer_) {
     writer_->write_packet(*frame.get());
   }
+}
+
+AgoraRTC::ICMFile* event_handler::GetICMFileObject(unsigned uid) {
+  std::lock_guard<std::mutex> auto_lock(lock_);
+  auto it = peers_.find(uid);
+  if (it == peers_.end()) {
+    it = peers_.insert(std::make_pair(uid, peer_stream_t(
+        new peer_stream(uid)))).first;
+  }
+
+  return it->second.get();
+}
+
+int event_handler::InsertRawAudioPacket(unsigned uid, const unsigned char *payload,
+    unsigned short payload_size, int payload_type, unsigned int timestamp,
+    unsigned short seq_no) {
+  // FIXME
 }
 
 }
