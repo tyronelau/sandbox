@@ -65,9 +65,9 @@ event_handler::~event_handler() {
   delete reader_;
   delete writer_;
 
-  if (timer_) {
-    loop_.remove_timer(timer_);
-  }
+  // if (timer_) {
+  //   loop_.remove_timer(timer_);
+  // }
 }
 
 #ifdef GOOGLE_PROFILE_FLAG
