@@ -39,10 +39,12 @@ using std::string;
 using base::async_pipe_reader;
 using base::async_pipe_writer;
 using base::unpacker;
+using std::cout;
+using std::endl;
 
 class peer_stream : public AgoraRTC::ICMFile {
  public:
-  explicit peer_stream(unsigned int uid=0);
+  explicit peer_stream(event_handler *handler, unsigned int uid=0);
   virtual ~peer_stream();
 
   // The following functions are left intentionally unimplemented.
@@ -64,10 +66,12 @@ class peer_stream : public AgoraRTC::ICMFile {
   virtual int onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
       uint8_t *buffer, uint32_t length);
  private:
+  event_handler *handler_;
   unsigned uid_;
 };
 
-peer_stream::peer_stream(unsigned int uid) {
+peer_stream::peer_stream(event_handler *handler, unsigned int uid) {
+  handler_ = handler;
   uid_ = uid;
 }
 
@@ -91,23 +95,58 @@ int peer_stream::stopVideoRecord() {
 }
 
 int peer_stream::setVideoRotation(int rotation) {
+  (void)rotation;
+
   return 0;
 }
 
 int peer_stream::onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
     uint8_t *buffer, uint32_t length, uint32_t frame_num) {
+  (void)payload_type;
+  (void)frame_num;
+
+  if (handler_) {
+    handler_->on_video_frame(uid_, video_ts, buffer, length);
+  }
+
+  return 0;
 }
 
 int peer_stream::onEncodeVideo(uint32_t video_ts, uint8_t payload_type,
-    uint8_t *buffer, uint32_t length, uint32_t frame_num) {
+    uint8_t *buffer, uint32_t length) {
+  (void)video_ts;
+  (void)payload_type;
+  (void)buffer;
+  (void)length;
+
+  assert(false);
+  return -1;
 }
 
 int peer_stream::onDecodeAudio(uint32_t audio_ts, uint8_t payload_type,
     uint8_t *buffer, uint32_t length) {
+  (void)audio_ts;
+  (void)payload_type;
+  (void)buffer;
+  (void)length;
+
+  // We have handled this audio packet in audio_observer, ignore it.
+  // if (handler_) {
+  //   handler_->on_audio_frame(uid_, audio_ts, buffer, length);
+  // }
+
+  return 0;
 }
 
 int peer_stream::onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
     uint8_t *buffer, uint32_t length) {
+  (void)audio_ts;
+  (void)payload_type;
+  (void)buffer;
+  (void)length;
+
+  assert(false);
+  return -1;
 }
 
 atomic_bool_t event_handler::s_term_sig_;
@@ -165,6 +204,8 @@ void event_handler::cleanup() {
 }
 
 void event_handler::set_mosaic_mode(bool mosaic) {
+  cout << "Set mosaic mode: " << mosaic << endl;
+
   agora::rtc::AParameter msp(*applite_);
   msp->setBool("che.video.server_mode", mosaic);
 }
@@ -185,6 +226,7 @@ int event_handler::run() {
 
   registerAudioFrameObserver(audio_.get());
   registerVideoFrameObserver(video_.get());
+
   RegisterICMFileObserver(this);
 
   rtc::RtcEngineContextEx context;
@@ -218,10 +260,12 @@ int event_handler::run() {
   signal(SIGINT, term_handler);
   signal(SIGTERM, term_handler);
 
-  agora::rtc::AParameter msp(*applite_);
+  set_mosaic_mode(decode_);
+
+  // agora::rtc::AParameter msp(*applite_);
 
   // set the server_mode to true to enable the callback
-  msp->setBool("che.video.server_mode", true);
+  // msp->setBool("che.video.server_mode", true);
 
   if (applite_->joinChannel(vendor_key_.c_str(), channel_name_.c_str(),
       NULL, uid_) < 0) {
@@ -387,7 +431,6 @@ bool event_handler::on_error(base::async_pipe_writer *writer, short events) {
 }
 
 void event_handler::on_event(frame_ptr_t frame) {
-  // FIXME
   if (writer_) {
     writer_->write_packet(*frame.get());
   }
@@ -395,10 +438,10 @@ void event_handler::on_event(frame_ptr_t frame) {
 
 AgoraRTC::ICMFile* event_handler::GetICMFileObject(unsigned uid) {
   std::lock_guard<std::mutex> auto_lock(lock_);
-  auto it = peers_.find(uid);
-  if (it == peers_.end()) {
-    it = peers_.insert(std::make_pair(uid, peer_stream_t(
-        new peer_stream(uid)))).first;
+  auto it = streams_.find(uid);
+  if (it == streams_.end()) {
+    it = streams_.insert(std::make_pair(uid, std::unique_ptr<peer_stream>(
+        new peer_stream(this, uid)))).first;
   }
 
   return it->second.get();
@@ -407,7 +450,32 @@ AgoraRTC::ICMFile* event_handler::GetICMFileObject(unsigned uid) {
 int event_handler::InsertRawAudioPacket(unsigned uid, const unsigned char *payload,
     unsigned short payload_size, int payload_type, unsigned int timestamp,
     unsigned short seq_no) {
-  // FIXME
+  (void)uid;
+  (void)payload;
+  (void)payload_size;
+  (void)payload_type;
+  (void)timestamp;
+  (void)seq_no;
+
+  return 0;
+}
+
+// void event_handler::on_audio_frame(uint32_t uid, uint32_t audio_ts,
+//     uint8_t *buffer, uint32_t length) {
+//   (void)audio_ts;
+//   (void)buffer;
+// 
+//   SAFE_LOG(INFO) << "audio frame received from " << uid << ", length: "
+//       << length;
+// }
+
+void event_handler::on_video_frame(uint32_t uid, uint32_t video_ts,
+    uint8_t *buffer, uint32_t length) {
+  (void)video_ts;
+  (void)buffer;
+
+  SAFE_LOG(INFO) << "H264 video frame received from " << uid << ", length: "
+      << length;
 }
 
 }

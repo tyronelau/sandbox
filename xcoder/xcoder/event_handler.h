@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 
 #include "internal/rtc/IAgoraRtcEngine.h"
@@ -39,6 +40,12 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   ~event_handler();
 
   int run();
+
+  // void on_audio_frame(uint32_t uid, uint32_t audio_ts, uint8_t *buffer,
+  //     uint32_t length);
+
+  void on_video_frame(uint32_t uid, uint32_t video_ts, uint8_t *buffer,
+      uint32_t length);
  private:
   int run_internal();
 
@@ -93,6 +100,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   atomic_bool_t joined_;
   int32_t last_active_ts_;
 
+  std::mutex lock_;
   rtc::IRtcEngineEx *applite_;
 
   std::unique_ptr<audio_observer> audio_;
