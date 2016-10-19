@@ -125,7 +125,7 @@ $(RLS_BASE_TARGET): $(RLS_BASE_OBJECTS)
 $(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) $(RLS_STUB_TARGET)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) \
-		-Llibs -L$(RLS_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -ldl
+		-Llibs -L$(RLS_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -ldl -lrt
 	objcopy --only-keep-debug $(RLS_XCODER_TARGET) $(RLS_XCODER_TARGET).sym
 	objcopy --strip-debug $(RLS_XCODER_TARGET)
 	objcopy --add-gnu-debuglink=$(RLS_XCODER_TARGET).sym $(RLS_XCODER_TARGET)

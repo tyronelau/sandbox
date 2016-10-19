@@ -1,4 +1,4 @@
-create libxodec.a
+create libxcodec.a
 addlib libstub.a
 addlib libbase.a
 save
