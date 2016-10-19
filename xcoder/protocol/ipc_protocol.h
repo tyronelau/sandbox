@@ -14,8 +14,9 @@ enum message_uri {
   USER_JOINED_URI = 2,
   USER_DROPPED_URI = 3,
   AUDIO_FRAME_URI = 4,
-  VIDEO_FRAME_URI = 5,
+  YUV_FRAME_URI = 5,
   RECORDER_ERROR_URI = 6,
+  H264_FRAME_URI = 7,
 };
 
 DECLARE_PACKET_1(leave_packet, LEAVE_URI, int32_t, reason);
@@ -27,9 +28,12 @@ DECLARE_PACKET_6(audio_frame, AUDIO_FRAME_URI, uint32_t, uid, uint32_t,
     frame_ms, uint8_t, channels, uint8_t, bits, uint32_t, sample_rates,
     std::string, data);
 
-DECLARE_PACKET_8(video_frame, VIDEO_FRAME_URI, uint32_t, uid, uint32_t,
+DECLARE_PACKET_8(yuv_frame, YUV_FRAME_URI, uint32_t, uid, uint32_t,
     frame_ms, uint16_t, width, uint16_t, height, uint16_t, ystride,
     uint16_t, ustride, uint16_t, vstride, std::string, data);
+
+DECLARE_PACKET_4(h264_frame, H264_FRAME_URI, uint32_t, uid, uint32_t,
+    frame_ms, uint32_t, frame_num, std::string, data);
 
 DECLARE_PACKET_2(recorder_error, RECORDER_ERROR_URI, int32_t, error_code,
   std::string, reason);

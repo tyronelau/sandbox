@@ -15,8 +15,12 @@
 #include <gperftools/profiler.h>
 #endif
 
+#include "base/event_queue.h"
 #include "base/log.h"
+#include "base/packet.h"
 #include "base/safe_log.h"
+
+#include "protocol/ipc_protocol.h"
 
 #include "xcoder/audio_observer.h"
 #include "xcoder/video_observer.h"
@@ -39,12 +43,16 @@ using std::string;
 using base::async_pipe_reader;
 using base::async_pipe_writer;
 using base::unpacker;
+using base::event_queue;
+
 using std::cout;
 using std::endl;
 
 class peer_stream : public AgoraRTC::ICMFile {
  public:
-  explicit peer_stream(event_handler *handler, unsigned int uid=0);
+  typedef std::unique_ptr<base::packet> frame_ptr_t;
+
+  explicit peer_stream(event_queue<frame_ptr_t> *q, unsigned int uid=0);
   virtual ~peer_stream();
 
   // The following functions are left intentionally unimplemented.
@@ -66,12 +74,12 @@ class peer_stream : public AgoraRTC::ICMFile {
   virtual int onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
       uint8_t *buffer, uint32_t length);
  private:
-  event_handler *handler_;
+  event_queue<frame_ptr_t> *queue_;
   unsigned uid_;
 };
 
-peer_stream::peer_stream(event_handler *handler, unsigned int uid) {
-  handler_ = handler;
+peer_stream::peer_stream(event_queue<frame_ptr_t> *q, unsigned int uid) {
+  queue_ = q;
   uid_ = uid;
 }
 
@@ -105,10 +113,21 @@ int peer_stream::onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
   (void)payload_type;
   (void)frame_num;
 
-  if (handler_) {
-    handler_->on_video_frame(uid_, video_ts, buffer, length);
-  }
+  if (!queue_)
+    return 0;
 
+  protocol::h264_frame *f = new protocol::h264_frame;
+  f->uid = uid_;
+  f->frame_ms = video_ts;
+  f->frame_num = frame_num;
+
+  std::string &data = f->data;
+  data.reserve(length);
+
+  const char *start = reinterpret_cast<const char *>(buffer);
+  data.insert(data.end(), start, start + length);
+
+  queue_->push(frame_ptr_t(f));
   return 0;
 }
 
@@ -204,7 +223,7 @@ void event_handler::cleanup() {
 }
 
 void event_handler::set_mosaic_mode(bool mosaic) {
-  cout << "Set mosaic mode: " << mosaic << endl;
+  SAFE_LOG(INFO) << "Set mosaic mode: " << mosaic;
 
   agora::rtc::AParameter msp(*applite_);
   msp->setBool("che.video.server_mode", mosaic);
@@ -441,7 +460,7 @@ AgoraRTC::ICMFile* event_handler::GetICMFileObject(unsigned uid) {
   auto it = streams_.find(uid);
   if (it == streams_.end()) {
     it = streams_.insert(std::make_pair(uid, std::unique_ptr<peer_stream>(
-        new peer_stream(this, uid)))).first;
+        new peer_stream(&frames_, uid)))).first;
   }
 
   return it->second.get();

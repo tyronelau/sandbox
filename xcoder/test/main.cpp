@@ -94,9 +94,18 @@ void AgoraRecorder::AudioFrameReceived(unsigned int uid, AudioFrame *frame) {
   cout << "User " << uid << ", received an audio frame" << endl;
 }
 
-void AgoraRecorder::VideoFrameReceived(unsigned int uid, VideoFrame *frame) {
-  cout << "User " << uid << ", received a video frame, width: "
-      << frame->width_ << ", height: " << frame->height_ << endl;
+void AgoraRecorder::VideoFrameReceived(unsigned int uid, VideoFrame *f) {
+  if (f->type == agora::xcodec::kRawYuv) {
+    agora::xcodec::VideoYuvFrame *frame = f->frame.yuv;
+
+    cout << "User " << uid << ", received a yuv frame, width: "
+        << frame->width_ << ", height: " << frame->height_ << endl;
+  } else if (f->type == agora::xcodec::kH264) {
+    agora::xcodec::VideoH264Frame *frame = f->frame.h264;
+
+    cout << "User " << uid << ", received a h264 frame, timestamp: "
+        << frame->frame_ms << ", frame no: " << frame->frame_num << endl;
+  }
 }
 
 atomic_bool_t s_stop_flag;

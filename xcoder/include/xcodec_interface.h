@@ -29,13 +29,13 @@ class AudioFrame {
   std::string buf_; // samples * sample_bits_ / CHAR_BIT * channels_
 };
 
-class VideoFrame {
+class VideoYuvFrame {
   friend class RecorderImpl;
  public:
-  VideoFrame(uint_t frame_ms, uint_t width, uint_t height, uint_t ystride,
+  VideoYuvFrame(uint_t frame_ms, uint_t width, uint_t height, uint_t ystride,
       uint_t ustride, uint_t vstride);
 
-  ~VideoFrame();
+  ~VideoYuvFrame();
  public:
   uint_t frame_ms_;
 
@@ -53,21 +53,47 @@ class VideoFrame {
   std::string data_;
 };
 
+struct VideoH264Frame {
+  uint_t frame_ms;
+  uint_t frame_num;
+  std::string payload;
+};
+
+enum FrameType {
+  kRawYuv = 0,
+  kH264 = 1,
+};
+
+struct VideoFrame {
+  FrameType type;
+  union {
+    VideoYuvFrame *yuv;
+    VideoH264Frame *h264;
+  } frame;
+};
+
 struct RecorderCallback {
+  virtual ~RecorderCallback() {}
+
   virtual void RecorderError(int error, const char *reason) = 0;
 
   virtual void RemoteUserJoined(unsigned int uid) = 0;
   virtual void RemoteUserDropped(unsigned int uid) = 0;
 
   virtual void AudioFrameReceived(unsigned int uid, AudioFrame *frame) = 0;
+
+  // For performance concerns, it is safe to take the ownership of real
+  // payload contained in |*frame|.
   virtual void VideoFrameReceived(unsigned int uid, VideoFrame *frame) = 0;
 };
 
 struct Recorder {
   static Recorder* CreateRecorder(RecorderCallback *callback);
 
+  virtual ~Recorder() {}
+
   virtual int JoinChannel(const char *app_id, const char *channel_name,
-      bool is_dual=false, uint_t uid=0) = 0;
+      bool is_dual=false, uint_t uid=0, const char *path_prefix=NULL) = 0;
 
   virtual int LeaveChannel() = 0;
 

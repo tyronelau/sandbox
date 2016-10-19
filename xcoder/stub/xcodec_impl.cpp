@@ -30,8 +30,8 @@ AudioFrame::AudioFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples) {
 AudioFrame::~AudioFrame() {
 }
 
-VideoFrame::VideoFrame(uint_t frame_ms, uint_t width, uint_t height, uint_t ystride,
-    uint_t ustride, uint_t vstride) {
+VideoYuvFrame::VideoYuvFrame(uint_t frame_ms, uint_t width, uint_t height,
+    uint_t ystride, uint_t ustride, uint_t vstride) {
   frame_ms_ = frame_ms;
   width_ = width;
   height_ = height;
@@ -44,7 +44,7 @@ VideoFrame::VideoFrame(uint_t frame_ms, uint_t width, uint_t height, uint_t ystr
   vbuf_ = NULL;
 }
 
-VideoFrame::~VideoFrame() {
+VideoYuvFrame::~VideoYuvFrame() {
 }
 
 Recorder* Recorder::CreateRecorder(RecorderCallback *callback) {
@@ -84,8 +84,8 @@ int RecorderImpl::Destroy() {
   return 0;
 }
 
-int RecorderImpl::JoinChannel(const char *vendor_key,
-    const char *channel_name, bool is_dual, uint_t uid) {
+int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
+    bool is_dual, uint_t uid, const char *path_prefix) {
   int reader_fds[2];
   if (pipe(reader_fds) != 0) {
     SAFE_LOG(ERROR) << "Failed to create a pipe for read: "
@@ -102,12 +102,17 @@ int RecorderImpl::JoinChannel(const char *vendor_key,
     return -1;
   }
 
+  std::string program("xcoder");
+  if (path_prefix != NULL && strcmp(path_prefix, "")) {
+    program = std::string(path_prefix) + "/" + program;
+  }
+
   std::vector<const char *> args;
-  args.push_back("xcoder");
+  args.push_back(program.c_str());
   args.push_back("--key");
   args.push_back(vendor_key);
   args.push_back("--name");
-  args.push_back(channel_name);
+  args.push_back(cname);
 
   args.push_back("--write");
   char write_str[16];
@@ -208,8 +213,14 @@ bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
     on_audio_frame(std::move(frame));
     break;
   }
-  case protocol::VIDEO_FRAME_URI: {
-    protocol::video_frame frame;
+  case protocol::YUV_FRAME_URI: {
+    protocol::yuv_frame frame;
+    frame.unmarshall(pkr);
+    on_video_frame(std::move(frame));
+    break;
+  }
+  case protocol::H264_FRAME_URI: {
+    protocol::h264_frame frame;
     frame.unmarshall(pkr);
     on_video_frame(std::move(frame));
     break;
@@ -274,8 +285,8 @@ void RecorderImpl::on_audio_frame(protocol::audio_frame frame) {
   }
 }
 
-void RecorderImpl::on_video_frame(protocol::video_frame frame) {
-  xcodec::VideoFrame t(frame.frame_ms, frame.width, frame.height,
+void RecorderImpl::on_video_frame(protocol::yuv_frame frame) {
+  xcodec::VideoYuvFrame t(frame.frame_ms, frame.width, frame.height,
       frame.ystride, frame.ustride, frame.vstride);
 
   t.data_ = std::move(frame.data);
@@ -288,7 +299,26 @@ void RecorderImpl::on_video_frame(protocol::video_frame frame) {
   t.vbuf_ = reinterpret_cast<uchar_t *>(&t.data_[offset]);
 
   if (callback_) {
-    callback_->VideoFrameReceived(frame.uid, &t);
+    xcodec::VideoFrame frm;
+    frm.type = xcodec::kRawYuv;
+    frm.frame.yuv = &t;
+
+    callback_->VideoFrameReceived(frame.uid, &frm);
+  }
+}
+
+void RecorderImpl::on_video_frame(protocol::h264_frame frame) {
+  xcodec::VideoH264Frame t;
+  t.frame_ms = frame.frame_ms;
+  t.frame_num = frame.frame_num;
+  t.payload = std::move(frame.data);
+
+  if (callback_) {
+    xcodec::VideoFrame frm;
+    frm.type = xcodec::kH264;
+    frm.frame.h264 = &t;
+
+    callback_->VideoFrameReceived(frame.uid, &frm);
   }
 }
 

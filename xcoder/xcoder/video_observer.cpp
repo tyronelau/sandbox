@@ -37,8 +37,7 @@ bool video_observer::onRenderVideoFrame(uint_t uid, VideoFrame &frame) {
   SAFE_LOG(DEBUG) << "Frame received: " << uid << ", width: " << width
       << ", height: " << height;
 
-  // FIXME
-  protocol::video_frame *f = new protocol::video_frame;
+  protocol::yuv_frame *f = new protocol::yuv_frame;
   f->uid = uid;
   f->frame_ms = static_cast<uint32_t>(base::now_ms());
   f->width = static_cast<uint16_t>(width);

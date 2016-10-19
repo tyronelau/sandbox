@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   string key;
   string name;
   bool dual = false;
-  bool decode = false;
+  bool decode = true;
   int read_fd = -1;
   int write_fd = -1;
 
@@ -57,6 +57,6 @@ int main(int argc, char *argv[]) {
   LOG(INFO, "uid %" PRIu32 " from vendor %s is joining channel %s",
       uid, key.c_str(), name.c_str());
 
-  event_handler handler(uid, key, name, dual, read_fd, write_fd, !decode);
+  event_handler handler(uid, key, name, dual, read_fd, write_fd, decode);
   return handler.run();
 }

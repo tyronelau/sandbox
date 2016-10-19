@@ -107,7 +107,7 @@ $(DBG_BASE_TARGET): $(DBG_BASE_OBJECTS)
 $(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_XCODER_OBJECTS) \
-		-Llibs -L$(DBG_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread -lasan
+		-Llibs -L$(DBG_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -lasan -ldl
 
 $(DBG_TEST_TARGET): $(DBG_STUB_TARGET) $(DBG_BASE_TARGET) $(DBG_TEST_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -125,7 +125,10 @@ $(RLS_BASE_TARGET): $(RLS_BASE_OBJECTS)
 $(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) $(RLS_STUB_TARGET)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) \
-		-Llibs -L$(RLS_BIN_PATH) -lbase -lagorartc -lHDACEngine -pthread -lpthread
+		-Llibs -L$(RLS_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -ldl
+	objcopy --only-keep-debug $(RLS_XCODER_TARGET) $(RLS_XCODER_TARGET).sym
+	objcopy --strip-debug $(RLS_XCODER_TARGET)
+	objcopy --add-gnu-debuglink=$(RLS_XCODER_TARGET).sym $(RLS_XCODER_TARGET)
 
 $(RLS_TEST_TARGET): $(RLS_STUB_TARGET) $(RLS_BASE_TARGET) $(RLS_TEST_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -137,12 +140,8 @@ $(RLS_STUB_TARGET): $(RLS_STUB_OBJECTS)
 	ar cqs "$@" $^
 
 debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET) $(DBG_STUB_TARGET) $(DBG_TEST_TARGET)
-	ln -f libs/libHDACEngine.so $(DBG_BIN_PATH)/libHDACEngine.so
-	ln -f libs/libagorartc.so $(DBG_BIN_PATH)/libagorartc.so
 
 release: $(RLS_BASE_TARGET) $(RLS_XCODER_TARGET) $(RLS_STUB_TARGET) $(RLS_TEST_TARGET)
-	ln -f libs/libHDACEngine.so $(RLS_BIN_PATH)/libHDACEngine.so
-	ln -f libs/libagorartc.so $(RLS_BIN_PATH)/libagorartc.so
 
 pre:
 	@mkdir -p $(DBG_OBJ_PATH)

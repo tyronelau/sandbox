@@ -28,7 +28,7 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
 
   // called by the SDK user, in the user thread.
   virtual int JoinChannel(const char *app_id, const char *channel_name,
-      bool is_dual=false, uint_t uid=0);
+      bool is_dual=false, uint_t uid=0, const char *path_prefix=NULL);
 
   // called by the SDK user, possilbly in either event or user thread.
   virtual int LeaveChannel();
@@ -50,7 +50,9 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
   void on_user_dropped(uint32_t uid);
 
   void on_audio_frame(protocol::audio_frame frame);
-  void on_video_frame(protocol::video_frame frame);
+  void on_video_frame(protocol::yuv_frame frame);
+  void on_video_frame(protocol::h264_frame frame);
+
   void on_recorder_error(int32_t error_code, const std::string &reason);
  private:
   std::thread thread_;
