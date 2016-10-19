@@ -52,7 +52,9 @@ class peer_stream : public AgoraRTC::ICMFile {
  public:
   typedef std::unique_ptr<base::packet> frame_ptr_t;
 
-  explicit peer_stream(event_queue<frame_ptr_t> *q, unsigned int uid=0);
+  explicit peer_stream(event_queue<frame_ptr_t> *q, bool decode,
+      unsigned int uid=0);
+
   virtual ~peer_stream();
 
   // The following functions are left intentionally unimplemented.
@@ -75,10 +77,13 @@ class peer_stream : public AgoraRTC::ICMFile {
       uint8_t *buffer, uint32_t length);
  private:
   event_queue<frame_ptr_t> *queue_;
+  bool decode_;
   unsigned uid_;
 };
 
-peer_stream::peer_stream(event_queue<frame_ptr_t> *q, unsigned int uid) {
+peer_stream::peer_stream(event_queue<frame_ptr_t> *q, bool decode,
+    unsigned int uid) {
+  decode_ = decode;
   queue_ = q;
   uid_ = uid;
 }
@@ -113,7 +118,8 @@ int peer_stream::onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
   (void)payload_type;
   (void)frame_num;
 
-  if (!queue_)
+  // if |decode_| is true, we don't want a h264 frame.
+  if (!queue_ || decode_)
     return 0;
 
   protocol::h264_frame *f = new protocol::h264_frame;
@@ -245,7 +251,6 @@ int event_handler::run() {
 
   registerAudioFrameObserver(audio_.get());
   registerVideoFrameObserver(video_.get());
-
   RegisterICMFileObserver(this);
 
   rtc::RtcEngineContextEx context;
@@ -281,11 +286,6 @@ int event_handler::run() {
 
   set_mosaic_mode(decode_);
 
-  // agora::rtc::AParameter msp(*applite_);
-
-  // set the server_mode to true to enable the callback
-  // msp->setBool("che.video.server_mode", true);
-
   if (applite_->joinChannel(vendor_key_.c_str(), channel_name_.c_str(),
       NULL, uid_) < 0) {
     SAFE_LOG(ERROR) << "Failed to create the channel " << channel_name_;
@@ -319,16 +319,6 @@ void event_handler::on_timer() {
 int event_handler::run_internal() {
   timer_ = loop_.add_timer(500, event_handler::timer_callback, this);
   return loop_.run();
-
-  // FIXME: run your event loop here.
-  // while (!s_term_sig_) {
-  //   sleep(1);
-  // }
-
-  // SAFE_LOG(INFO) << "Ready to leave";
-
-  // cleanup();
-  // return 0;
 }
 
 void event_handler::term_handler(int sig_no) {
@@ -460,7 +450,7 @@ AgoraRTC::ICMFile* event_handler::GetICMFileObject(unsigned uid) {
   auto it = streams_.find(uid);
   if (it == streams_.end()) {
     it = streams_.insert(std::make_pair(uid, std::unique_ptr<peer_stream>(
-        new peer_stream(&frames_, uid)))).first;
+        new peer_stream(&frames_, decode_, uid)))).first;
   }
 
   return it->second.get();

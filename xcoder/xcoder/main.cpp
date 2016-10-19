@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   string key;
   string name;
   bool dual = false;
-  bool decode = true;
+  bool decode = false;
   int read_fd = -1;
   int write_fd = -1;
 

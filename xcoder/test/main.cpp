@@ -25,7 +25,9 @@ class AgoraRecorder : public agora::xcodec::RecorderCallback {
   AgoraRecorder();
   ~AgoraRecorder();
 
-  bool CreateChannel(const string &key, const string &name, uint32_t uid);
+  bool CreateChannel(const string &key, const string &name, uint32_t uid,
+      bool decode);
+
   bool DestroyChannel();
 
   bool Stopped() const;
@@ -58,11 +60,12 @@ bool AgoraRecorder::Stopped() const {
 }
 
 bool AgoraRecorder::CreateChannel(const string &key, const string &name,
-    uint32_t uid) {
+    uint32_t uid, bool decode) {
   if ((recorder_ = agora::xcodec::Recorder::CreateRecorder(this)) == NULL)
     return false;
 
-  return 0 == recorder_->JoinChannel(key.c_str(), name.c_str(), false, uid);
+  return 0 == recorder_->JoinChannel(key.c_str(), name.c_str(), false,
+      uid, decode);
 }
 
 bool AgoraRecorder::DestroyChannel() {
@@ -122,6 +125,7 @@ int main(int argc, char * const argv[]) {
   string key;
   string name;
   // bool dual = false;
+  bool decode = false;
 
   s_stop_flag = false;
   signal(SIGQUIT, signal_handler);
@@ -132,6 +136,7 @@ int main(int argc, char * const argv[]) {
   parser.add_long_opt("uid", &uid);
   parser.add_long_opt("key", &key);
   parser.add_long_opt("name", &name);
+  parser.add_long_opt("decode", &decode);
 
   if (!parser.parse_opts(argc, argv) || key.empty() || name.empty()) {
     std::ostringstream sout;
@@ -144,7 +149,7 @@ int main(int argc, char * const argv[]) {
       uid, key.c_str(), name.c_str());
 
   AgoraRecorder recorder;
-  recorder.CreateChannel(key, name, uid);
+  recorder.CreateChannel(key, name, uid, decode);
 
   while (!recorder.Stopped() && !s_stop_flag) {
     sleep(1);

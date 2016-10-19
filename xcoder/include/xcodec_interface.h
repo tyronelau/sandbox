@@ -93,7 +93,8 @@ struct Recorder {
   virtual ~Recorder() {}
 
   virtual int JoinChannel(const char *app_id, const char *channel_name,
-      bool is_dual=false, uint_t uid=0, const char *path_prefix=NULL) = 0;
+      bool is_dual=false, uint_t uid=0, bool decode_frame=false,
+      const char *path_prefix=NULL) = 0;
 
   virtual int LeaveChannel() = 0;
 

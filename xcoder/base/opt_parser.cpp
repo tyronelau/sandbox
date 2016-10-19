@@ -123,8 +123,6 @@ bool opt_parser::insert_long_opt(internal_opt opt, const char *long_opt) {
 // }
 
 bool opt_parser::add_long_opt(const char *long_opt, bool *store) {
-  *store = false;
-
   internal_opt arg = {kBool, {store}};
   return insert_long_opt(arg, long_opt);
 }
