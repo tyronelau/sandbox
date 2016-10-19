@@ -249,9 +249,12 @@ int event_handler::run() {
     return -1;
   }
 
-  registerAudioFrameObserver(audio_.get());
-  registerVideoFrameObserver(video_.get());
-  RegisterICMFileObserver(this);
+  if (decode_) {
+    registerAudioFrameObserver(audio_.get());
+    registerVideoFrameObserver(video_.get());
+  } else {
+    RegisterICMFileObserver(this);
+  }
 
   rtc::RtcEngineContextEx context;
   context.eventHandler = this;
@@ -456,27 +459,83 @@ AgoraRTC::ICMFile* event_handler::GetICMFileObject(unsigned uid) {
   return it->second.get();
 }
 
+static void adtsDataForPacketLength(char packet[7], int16_t packetLength) {
+  const int adtsLength = 7;
+  // Variables Recycled by addADTStoPacket
+  int profile = 2;  // AAC LC
+  // 39=MediaCodecInfo.CodecProfileLevel.AACObjectELD;
+  int freqIdx = 5;  // 32KHz
+  int chanCfg = 1;  // MPEG-4 Audio Channel Configuration. 1 Channel front-center
+  // NSUInteger fullLength = adtsLength + packetLength;
+  unsigned long fullLength = adtsLength + packetLength;
+  // fill in ADTS data
+  packet[0] = (char)0xFF;  // 11111111    = syncword
+  packet[1] = (char)0xF9;  // 1111 1 00 1  = syncword MPEG-2 Layer CRC
+  packet[2] = (char)(((profile-1)<<6) + (freqIdx<<2) +(chanCfg>>2));
+  packet[3] = (char)(((chanCfg&3)<<6) + (fullLength>>11));
+  packet[4] = (char)((fullLength&0x7FF) >> 3);
+  packet[5] = (char)(((fullLength&7)<<5) + 0x1F);
+  packet[6] = (char)0xFC;
+}
+
 int event_handler::InsertRawAudioPacket(unsigned uid, const unsigned char *payload,
-    unsigned short payload_size, int payload_type, unsigned int timestamp,
-    unsigned short seq_no) {
+    unsigned short size, int type, unsigned int timestamp, unsigned short seq_no) {
   (void)uid;
   (void)payload;
-  (void)payload_size;
-  (void)payload_type;
   (void)timestamp;
   (void)seq_no;
 
+  if (decode_)
+    return 0;
+
+  //std::unique_ptr<char[]> data;
+  char* data = NULL;
+  int16_t reduced_size = static_cast<uint16_t>(size - 3);
+
+  if (type == 77) { // hardware AAC
+    //data.reset(new (std::nothrow)char[size - 3 + 7]);
+    data = new char[reduced_size + 7];
+    adtsDataForPacketLength(data, reduced_size);
+    memcpy(data + 7, payload + 3, reduced_size);
+    size = static_cast<unsigned short>(reduced_size + 7);
+  } else if (type == 79) { // software HEAAC
+    //data.reset(new (std::nothrow)char[size - 3]);
+    data = new char[reduced_size];
+    memcpy(data, payload + 3, reduced_size);
+    size = reduced_size;
+  } else {
+    return -1;
+  }
+
+  RawAudioPacket packet;
+  packet.payloadData = data;
+  packet.payloadSize = size;
+  packet.payloadType = type;
+  packet.timeStamp = timestamp;
+  packet.seqNumber = seq_no;
+
+  std::lock_guard<std::mutex> lock(buffer_mutex_);
+
+  SimpleAudioJitterBuffer &jitter = jitter_[uid];
+  jitter.SetExpectedDelay(2000);
+  jitter.InsertPacket(packet);
+
+  RawAudioPacket pkt;
+  while (jitter.GetPacket(pkt) >= 0) {
+    if (writer_) {
+      protocol::aac_frame f;
+      f.uid = uid;
+      f.frame_ms = pkt.timeStamp;
+      f.data = string(pkt.payloadData, pkt.payloadSize);
+
+      writer_->write_packet(f);
+    }
+
+    delete[] pkt.payloadData;
+  }
+
   return 0;
 }
-
-// void event_handler::on_audio_frame(uint32_t uid, uint32_t audio_ts,
-//     uint8_t *buffer, uint32_t length) {
-//   (void)audio_ts;
-//   (void)buffer;
-// 
-//   SAFE_LOG(INFO) << "audio frame received from " << uid << ", length: "
-//       << length;
-// }
 
 void event_handler::on_video_frame(uint32_t uid, uint32_t video_ts,
     uint8_t *buffer, uint32_t length) {

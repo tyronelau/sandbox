@@ -13,11 +13,21 @@ enum ErrorCode {
   kJoinFailed = 1,
 };
 
-class AudioFrame {
+enum AudioFrameType {
+  kRawPCM = 0,
+  kAAC = 1,
+};
+
+enum VideoFrameType {
+  kRawYuv = 0,
+  kH264 = 1,
+};
+
+class AudioPcmFrame {
   friend struct Recorder;
  public:
-  AudioFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples);
-  ~AudioFrame();
+  AudioPcmFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples);
+  ~AudioPcmFrame();
  public:
   uint_t frame_ms_;
   uint_t channels_; // 1
@@ -27,6 +37,23 @@ class AudioFrame {
 
   uint_t samples_;
   std::string buf_; // samples * sample_bits_ / CHAR_BIT * channels_
+};
+
+class AudioAacFrame {
+ public:
+  explicit AudioAacFrame(uint_t frame_ms);
+  ~AudioAacFrame();
+ public:
+  uint_t frame_ms_;
+  std::string buf_;
+};
+
+struct AudioFrame {
+  AudioFrameType type;
+  union {
+    AudioPcmFrame *pcm;
+    AudioAacFrame *aac;
+  } frame;
 };
 
 class VideoYuvFrame {
@@ -59,13 +86,8 @@ struct VideoH264Frame {
   std::string payload;
 };
 
-enum FrameType {
-  kRawYuv = 0,
-  kH264 = 1,
-};
-
 struct VideoFrame {
-  FrameType type;
+  VideoFrameType type;
   union {
     VideoYuvFrame *yuv;
     VideoH264Frame *h264;
@@ -80,6 +102,8 @@ struct RecorderCallback {
   virtual void RemoteUserJoined(unsigned int uid) = 0;
   virtual void RemoteUserDropped(unsigned int uid) = 0;
 
+  // For performance concerns, it is safe to take the ownership of real
+  // payload contained in |*frame|.
   virtual void AudioFrameReceived(unsigned int uid, AudioFrame *frame) = 0;
 
   // For performance concerns, it is safe to take the ownership of real

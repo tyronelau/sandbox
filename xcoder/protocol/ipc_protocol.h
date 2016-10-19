@@ -13,10 +13,11 @@ enum message_uri {
   LEAVE_URI = 1,
   USER_JOINED_URI = 2,
   USER_DROPPED_URI = 3,
-  AUDIO_FRAME_URI = 4,
+  PCM_FRAME_URI = 4,
   YUV_FRAME_URI = 5,
   RECORDER_ERROR_URI = 6,
   H264_FRAME_URI = 7,
+  AAC_FRAME_URI = 8,
 };
 
 DECLARE_PACKET_1(leave_packet, LEAVE_URI, int32_t, reason);
@@ -24,9 +25,12 @@ DECLARE_PACKET_1(leave_packet, LEAVE_URI, int32_t, reason);
 DECLARE_PACKET_1(user_joined, USER_JOINED_URI, uint32_t, uid);
 DECLARE_PACKET_1(user_dropped, USER_DROPPED_URI, uint32_t, uid);
 
-DECLARE_PACKET_6(audio_frame, AUDIO_FRAME_URI, uint32_t, uid, uint32_t,
+DECLARE_PACKET_6(pcm_frame, PCM_FRAME_URI, uint32_t, uid, uint32_t,
     frame_ms, uint8_t, channels, uint8_t, bits, uint32_t, sample_rates,
     std::string, data);
+
+DECLARE_PACKET_3(aac_frame, AAC_FRAME_URI, uint32_t, uid, uint32_t,
+    frame_ms, std::string, data);
 
 DECLARE_PACKET_8(yuv_frame, YUV_FRAME_URI, uint32_t, uid, uint32_t,
     frame_ms, uint16_t, width, uint16_t, height, uint16_t, ystride,

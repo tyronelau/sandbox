@@ -94,7 +94,11 @@ void AgoraRecorder::RemoteUserDropped(unsigned uid) {
 
 void AgoraRecorder::AudioFrameReceived(unsigned int uid, AudioFrame *frame) {
   (void)frame;
-  cout << "User " << uid << ", received an audio frame" << endl;
+  if (frame->type == agora::xcodec::kRawPCM) {
+    cout << "User " << uid << ", received a raw PCM frame" << endl;
+  } else if (frame->type == agora::xcodec::kAAC) {
+    cout << "User " << uid << ", received an AAC frame" << endl;
+  }
 }
 
 void AgoraRecorder::VideoFrameReceived(unsigned int uid, VideoFrame *f) {
@@ -106,7 +110,7 @@ void AgoraRecorder::VideoFrameReceived(unsigned int uid, VideoFrame *f) {
   } else if (f->type == agora::xcodec::kH264) {
     agora::xcodec::VideoH264Frame *frame = f->frame.h264;
 
-    cout << "User " << uid << ", received a h264 frame, timestamp: "
+    cout << "User " << uid << ", received an h264 frame, timestamp: "
         << frame->frame_ms << ", frame no: " << frame->frame_num << endl;
   }
 }

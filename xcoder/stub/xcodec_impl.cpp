@@ -19,7 +19,7 @@ using base::async_pipe_reader;
 using base::async_pipe_writer;
 using base::unpacker;
 
-AudioFrame::AudioFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples) {
+AudioPcmFrame::AudioPcmFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples) {
   frame_ms_ = frame_ms;
   channels_ = 1;
   sample_bits_ = 16;
@@ -27,7 +27,14 @@ AudioFrame::AudioFrame(uint_t frame_ms, uint_t sample_rates, uint_t samples) {
   samples_ = samples;
 }
 
-AudioFrame::~AudioFrame() {
+AudioPcmFrame::~AudioPcmFrame() {
+}
+
+AudioAacFrame::AudioAacFrame(uint_t frame_ms) {
+  frame_ms_ = frame_ms;
+}
+
+AudioAacFrame::~AudioAacFrame() {
 }
 
 VideoYuvFrame::VideoYuvFrame(uint_t frame_ms, uint_t width, uint_t height,
@@ -213,8 +220,14 @@ bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
   assert(reader == reader_);
 
   switch (uri) {
-  case protocol::AUDIO_FRAME_URI: {
-    protocol::audio_frame frame;
+  case protocol::PCM_FRAME_URI: {
+    protocol::pcm_frame frame;
+    frame.unmarshall(pkr);
+    on_audio_frame(std::move(frame));
+    break;
+  }
+  case protocol::AAC_FRAME_URI: {
+    protocol::aac_frame frame;
     frame.unmarshall(pkr);
     on_audio_frame(std::move(frame));
     break;
@@ -279,15 +292,30 @@ bool RecorderImpl::on_error(async_pipe_writer *writer, short events) {
   return true;
 }
 
-void RecorderImpl::on_audio_frame(protocol::audio_frame frame) {
-  xcodec::AudioFrame t(frame.frame_ms, frame.sample_rates, 160);
+void RecorderImpl::on_audio_frame(protocol::pcm_frame frame) {
+  xcodec::AudioPcmFrame t(frame.frame_ms, frame.sample_rates, 160);
   t.channels_ = 1;
   t.sample_bits_ = 16;
   t.buf_ = std::move(frame.data);
   t.samples_ = static_cast<uint_t>(t.buf_.size() / 2);
 
   if (callback_) {
-    callback_->AudioFrameReceived(frame.uid, &t);
+    xcodec::AudioFrame f;
+    f.type = kRawPCM;
+    f.frame.pcm = &t;
+    callback_->AudioFrameReceived(frame.uid, &f);
+  }
+}
+
+void RecorderImpl::on_audio_frame(protocol::aac_frame frame) {
+  xcodec::AudioAacFrame t(frame.frame_ms);
+  t.buf_ = std::move(frame.data);
+
+  if (callback_) {
+    xcodec::AudioFrame f;
+    f.type = kAAC;
+    f.frame.aac = &t;
+    callback_->AudioFrameReceived(frame.uid, &f);
   }
 }
 

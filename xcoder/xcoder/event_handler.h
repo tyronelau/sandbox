@@ -5,17 +5,18 @@
 #include <mutex>
 #include <string>
 
-#include "internal/rtc/IAgoraRtcEngine.h"
 #include "internal/ICodingModuleCallback.h"
+#include "internal/rtc/IAgoraRtcEngine.h"
 #include "internal/rtc/rtc_engine_i.h"
 
 #include "base/async_pipe.h"
 #include "base/atomic.h"
-#include "base/packet.h"
 #include "base/event_loop.h"
 #include "base/event_queue.h"
+#include "base/packet.h"
 
 #include "protocol/ipc_protocol.h"
+#include "xcoder/simple_audio_jitterbuffer.h"
 
 namespace agora {
 namespace xcodec {
@@ -113,6 +114,9 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
 
   base::timer_event *timer_;
   base::event_queue<frame_ptr_t> frames_;
+
+  std::mutex buffer_mutex_;
+  std::unordered_map<uint32_t, SimpleAudioJitterBuffer> jitter_;
 
   static atomic_bool_t s_term_sig_;
 };

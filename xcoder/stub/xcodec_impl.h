@@ -50,7 +50,9 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
   void on_user_joined(uint32_t uid);
   void on_user_dropped(uint32_t uid);
 
-  void on_audio_frame(protocol::audio_frame frame);
+  void on_audio_frame(protocol::pcm_frame frame);
+  void on_audio_frame(protocol::aac_frame frame);
+
   void on_video_frame(protocol::yuv_frame frame);
   void on_video_frame(protocol::h264_frame frame);
 

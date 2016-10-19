@@ -31,7 +31,7 @@ bool audio_observer::onPlaybackAudioFrame(AudioFrame &frame) {
   int nChannels = frame.channels;
   int samplesPerSec = frame.samplesPerSec;
 
-  protocol::audio_frame *f = new protocol::audio_frame;
+  protocol::pcm_frame *f = new protocol::pcm_frame;
   f->uid = 0;
   f->frame_ms = static_cast<uint32_t>(base::now_ms());
   f->channels = static_cast<uint8_t>(nChannels);
@@ -53,7 +53,7 @@ bool audio_observer::onPlaybackAudioFrameBeforeMixing(unsigned int uid,
   int nChannels = frame.channels;
   int samplesPerSec = frame.samplesPerSec;
 
-  protocol::audio_frame *f = new protocol::audio_frame;
+  protocol::pcm_frame *f = new protocol::pcm_frame;
   f->uid = uid;
   f->frame_ms = static_cast<uint32_t>(base::now_ms());
   f->channels = static_cast<uint8_t>(nChannels);
