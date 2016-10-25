@@ -194,7 +194,7 @@ bool async_pipe_writer::write_packet(const packet &p) {
 
   // takes rvalue away
   std::vector<char> buffer = pkr.take_buffer();
-  // SAFE_LOG(INFO) << "packet size: " << buffer.size();
+  // SAFE_LOG(INFO) << "packet size: " << buffer.size() << ", header: " << *reinterpret_cast<uint32_t *>(&buffer[0]);
 
   if (writable_) {
     // Send it immediately
