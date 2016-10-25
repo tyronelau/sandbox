@@ -26,7 +26,7 @@ class AgoraRecorder : public agora::xcodec::RecorderCallback {
   ~AgoraRecorder();
 
   bool CreateChannel(const string &key, const string &name, uint32_t uid,
-      bool decode);
+      bool decode_audio, bool decode_video);
 
   bool DestroyChannel();
 
@@ -60,18 +60,17 @@ bool AgoraRecorder::Stopped() const {
 }
 
 bool AgoraRecorder::CreateChannel(const string &key, const string &name,
-    uint32_t uid, bool decode) {
+    uint32_t uid, bool decode_audio, bool decode_video) {
   if ((recorder_ = agora::xcodec::Recorder::CreateRecorder(this)) == NULL)
     return false;
 
   return 0 == recorder_->JoinChannel(key.c_str(), name.c_str(), false,
-      uid, decode);
+      uid, decode_audio, decode_video);
 }
 
 bool AgoraRecorder::DestroyChannel() {
   if (recorder_) {
     recorder_->LeaveChannel();
-    recorder_->Destroy();
     recorder_ = NULL;
     stopped_ = true;
   }
@@ -94,8 +93,14 @@ void AgoraRecorder::RemoteUserDropped(unsigned uid) {
 
 void AgoraRecorder::AudioFrameReceived(unsigned int uid, AudioFrame *frame) {
   (void)frame;
+  static FILE *fp = fopen("temp.pcm", "wb");
+
   if (frame->type == agora::xcodec::kRawPCM) {
     cout << "User " << uid << ", received a raw PCM frame" << endl;
+    if (uid == 0) {
+      agora::xcodec::AudioPcmFrame *f = frame->frame.pcm;
+      ::fwrite(&f->buf_[0], 1, f->buf_.size(), fp);
+    }
   } else if (frame->type == agora::xcodec::kAAC) {
     cout << "User " << uid << ", received an AAC frame" << endl;
   }
@@ -129,7 +134,8 @@ int main(int argc, char * const argv[]) {
   string key;
   string name;
   // bool dual = false;
-  bool decode = false;
+  bool decode_audio = false;
+  bool decode_video = false;
 
   s_stop_flag = false;
   signal(SIGQUIT, signal_handler);
@@ -140,7 +146,8 @@ int main(int argc, char * const argv[]) {
   parser.add_long_opt("uid", &uid);
   parser.add_long_opt("key", &key);
   parser.add_long_opt("name", &name);
-  parser.add_long_opt("decode", &decode);
+  parser.add_long_opt("decode_audio", &decode_audio);
+  parser.add_long_opt("decode_video", &decode_video);
 
   if (!parser.parse_opts(argc, argv) || key.empty() || name.empty()) {
     std::ostringstream sout;
@@ -153,7 +160,7 @@ int main(int argc, char * const argv[]) {
       uid, key.c_str(), name.c_str());
 
   AgoraRecorder recorder;
-  recorder.CreateChannel(key, name, uid, decode);
+  recorder.CreateChannel(key, name, uid, decode_audio, decode_video);
 
   while (!recorder.Stopped() && !s_stop_flag) {
     sleep(1);

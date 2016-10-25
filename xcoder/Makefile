@@ -104,7 +104,8 @@ $(DBG_BASE_TARGET): $(DBG_BASE_OBJECTS)
 	@mkdir -p $(dir $@)
 	ar cqs "$@" $^
 
-$(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET)
+$(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET) \
+		libs/librtcengine.a libs/libRtcEngine.a
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_XCODER_OBJECTS) \
 		-Llibs -L$(DBG_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -lasan -ldl
@@ -122,7 +123,8 @@ $(RLS_BASE_TARGET): $(RLS_BASE_OBJECTS)
 	@mkdir -p $(dir $@)
 	ar cqs "$@" $^
 
-$(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) $(RLS_STUB_TARGET)
+$(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) \
+		libs/librtcengine.a libs/libRtcEngine.a
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) \
 		-Llibs -L$(RLS_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -ldl -lrt

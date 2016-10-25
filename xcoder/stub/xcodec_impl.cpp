@@ -78,9 +78,9 @@ RecorderImpl::~RecorderImpl() {
     delete writer_;
   }
 
-  if (timer_) {
-    loop_.remove_timer(timer_);
-  }
+  // if (timer_) {
+  //   loop_.remove_timer(timer_);
+  // }
 
   process_.stop();
   process_.wait();
@@ -92,12 +92,13 @@ int RecorderImpl::Destroy() {
 }
 
 int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
-    bool is_dual, uint_t uid, bool decode_frame, const char *path_prefix) {
+    bool is_dual, uint_t uid, bool decode_audio, bool decode_video,
+    const char *path_prefix) {
   int reader_fds[2];
   if (pipe(reader_fds) != 0) {
     SAFE_LOG(ERROR) << "Failed to create a pipe for read: "
         << strerror(errno);
-    return -1;
+    return -errno;
   }
 
   int writer_fds[2];
@@ -106,7 +107,7 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
         << strerror(errno);
     close(reader_fds[0]);
     close(reader_fds[1]);
-    return -1;
+    return -errno;
   }
 
   std::string program("xcoder");
@@ -135,8 +136,12 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
     args.push_back("--dual");
   }
 
-  if (decode_frame) {
-    args.push_back("--decode");
+  if (decode_audio) {
+    args.push_back("--decode_audio");
+  }
+
+  if (decode_video) {
+    args.push_back("--decode_video");
   }
 
   char uid_str[16];
@@ -155,7 +160,7 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
     close(reader_fds[1]);
     close(writer_fds[0]);
     close(writer_fds[1]);
-    return -1;
+    return -errno;
   }
 
   close(writer_fds[0]);

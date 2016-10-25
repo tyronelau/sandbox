@@ -57,6 +57,9 @@ int event_loop::run() {
         on_error_event(e.fd, e.revents);
       }
 
+      if (stop_)
+        return 0;
+
       if (e.revents & POLLIN) {
         on_read_event(e.fd, e.revents);
       }

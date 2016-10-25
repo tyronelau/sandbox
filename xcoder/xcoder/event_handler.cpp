@@ -118,7 +118,7 @@ int peer_stream::onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
   (void)payload_type;
   (void)frame_num;
 
-  // if |decode_| is true, we don't want a h264 frame.
+  // if |decode_| is true, we don't want a raw h264 frame.
   if (!queue_ || decode_)
     return 0;
 
@@ -178,9 +178,9 @@ atomic_bool_t event_handler::s_term_sig_;
 
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
     const string &channel_name, bool dual, int read_fd, int write_fd,
-    bool decode) : uid_(uid), vendor_key_(vendor_key),
-    channel_name_(channel_name), is_dual_(dual), decode_(decode),
-    frames_(&loop_, this, 128) {
+    bool audio_decode, bool video_decode) : uid_(uid), vendor_key_(vendor_key),
+    channel_name_(channel_name), is_dual_(dual), audio_decode_(audio_decode),
+    video_decode_(video_decode), frames_(&loop_, this, 128) {
   applite_ = NULL;
   joined_ = false;
   timer_ = NULL;
@@ -228,11 +228,18 @@ void event_handler::cleanup() {
   sleep(1);
 }
 
-void event_handler::set_mosaic_mode(bool mosaic) {
-  SAFE_LOG(INFO) << "Set mosaic mode: " << mosaic;
+void event_handler::set_video_mosaic_mode(bool mosaic) {
+  SAFE_LOG(INFO) << "Set video mode: " << mosaic;
 
   agora::rtc::AParameter msp(*applite_);
   msp->setBool("che.video.server_mode", mosaic);
+}
+
+void event_handler::set_audio_mix_mode(bool mix) {
+  SAFE_LOG(INFO) << "Set audio mix mode: " << mix;
+
+  agora::rtc::AParameter msp(*applite_);
+  msp->setBool("che.audio.server_mode", mix);
 }
 
 int event_handler::run() {
@@ -249,12 +256,16 @@ int event_handler::run() {
     return -1;
   }
 
-  if (decode_) {
+  if (audio_decode_) {
     registerAudioFrameObserver(audio_.get());
-    registerVideoFrameObserver(video_.get());
-  } else {
-    RegisterICMFileObserver(this);
   }
+
+  if (video_decode_) {
+    registerVideoFrameObserver(video_.get());
+  }
+
+  // FIXME(liuyong)
+  RegisterICMFileObserver(this);
 
   rtc::RtcEngineContextEx context;
   context.eventHandler = this;
@@ -287,7 +298,8 @@ int event_handler::run() {
   signal(SIGINT, term_handler);
   signal(SIGTERM, term_handler);
 
-  set_mosaic_mode(decode_);
+  set_audio_mix_mode(audio_decode_);
+  set_video_mosaic_mode(video_decode_);
 
   if (applite_->joinChannel(vendor_key_.c_str(), channel_name_.c_str(),
       NULL, uid_) < 0) {
@@ -453,7 +465,7 @@ AgoraRTC::ICMFile* event_handler::GetICMFileObject(unsigned uid) {
   auto it = streams_.find(uid);
   if (it == streams_.end()) {
     it = streams_.insert(std::make_pair(uid, std::unique_ptr<peer_stream>(
-        new peer_stream(&frames_, decode_, uid)))).first;
+        new peer_stream(&frames_, video_decode_, uid)))).first;
   }
 
   return it->second.get();
@@ -485,7 +497,7 @@ int event_handler::InsertRawAudioPacket(unsigned uid, const unsigned char *paylo
   (void)timestamp;
   (void)seq_no;
 
-  if (decode_)
+  if (audio_decode_)
     return 0;
 
   //std::unique_ptr<char[]> data;

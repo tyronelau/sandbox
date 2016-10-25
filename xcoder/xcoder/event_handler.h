@@ -36,7 +36,8 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
       const std::string &vendor_key,
       const std::string &channel_name,
       bool is_dual, int read_fd,
-      int write_fd, bool decode);
+      int write_fd, bool audio_decode,
+      bool video_decode);
 
   ~event_handler();
 
@@ -80,7 +81,9 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
 
   void cleanup();
   void on_leave(int reason);
-  void set_mosaic_mode(bool mosaic);
+
+  void set_audio_mix_mode(bool mix);
+  void set_video_mosaic_mode(bool mosaic);
 
   static void term_handler(int sig_no);
 
@@ -96,7 +99,8 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   const std::string vendor_key_;
   const std::string channel_name_;
   const bool is_dual_;
-  const bool decode_;
+  const bool audio_decode_;
+  const bool video_decode_;
 
   atomic_bool_t joined_;
   int32_t last_active_ts_;

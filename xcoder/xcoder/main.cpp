@@ -25,7 +25,8 @@ int main(int argc, char *argv[]) {
   string key;
   string name;
   bool dual = false;
-  bool decode = false;
+  bool audio_decode = false;
+  bool video_decode = false;
   int read_fd = -1;
   int write_fd = -1;
 
@@ -38,7 +39,8 @@ int main(int argc, char *argv[]) {
   parser.add_long_opt("dual", &dual);
   parser.add_long_opt("write", &write_fd);
   parser.add_long_opt("read", &read_fd);
-  parser.add_long_opt("decode", &decode);
+  parser.add_long_opt("decode_audio", &audio_decode);
+  parser.add_long_opt("decode_video", &video_decode);
 
   if (!parser.parse_opts(argc, argv) || key.empty() || name.empty()) {
     std::ostringstream sout;
@@ -57,6 +59,8 @@ int main(int argc, char *argv[]) {
   LOG(INFO, "uid %" PRIu32 " from vendor %s is joining channel %s",
       uid, key.c_str(), name.c_str());
 
-  event_handler handler(uid, key, name, dual, read_fd, write_fd, decode);
+  event_handler handler(uid, key, name, dual, read_fd, write_fd,
+      audio_decode, video_decode);
+
   return handler.run();
 }

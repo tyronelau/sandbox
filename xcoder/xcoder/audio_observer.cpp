@@ -31,6 +31,8 @@ bool audio_observer::onPlaybackAudioFrame(AudioFrame &frame) {
   int nChannels = frame.channels;
   int samplesPerSec = frame.samplesPerSec;
 
+  // static FILE *fp = fopen("temp2.pcm", "wb");
+
   protocol::pcm_frame *f = new protocol::pcm_frame;
   f->uid = 0;
   f->frame_ms = static_cast<uint32_t>(base::now_ms());
@@ -40,6 +42,8 @@ bool audio_observer::onPlaybackAudioFrame(AudioFrame &frame) {
 
   size_t size = nSamples * nBytesPerSample * nChannels;
   f->data.assign(reinterpret_cast<const char *>(buffer), size);
+
+  // fwrite(buffer, 1, size, fp);
 
   queue_->push(frame_ptr_t(f));
   return true;
