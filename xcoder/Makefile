@@ -105,10 +105,10 @@ $(DBG_BASE_TARGET): $(DBG_BASE_OBJECTS)
 	ar cqs "$@" $^
 
 $(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET) \
-		libs/librtcengine.a libs/libRtcEngine.a
+		libs/libmediasdk.a libs/libRtcEngine.a
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_XCODER_OBJECTS) \
-		-Llibs -L$(DBG_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -lasan -ldl
+		-Llibs -L$(DBG_BIN_PATH) -lbase -lmediasdk -lRtcEngine -pthread -lpthread -lasan -ldl
 
 $(DBG_TEST_TARGET): $(DBG_STUB_TARGET) $(DBG_BASE_TARGET) $(DBG_TEST_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -124,10 +124,10 @@ $(RLS_BASE_TARGET): $(RLS_BASE_OBJECTS)
 	ar cqs "$@" $^
 
 $(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) \
-		libs/librtcengine.a libs/libRtcEngine.a
+		libs/libmediasdk.a libs/libRtcEngine.a
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) \
-		-Llibs -L$(RLS_BIN_PATH) -lbase -lrtcengine -lRtcEngine -pthread -lpthread -ldl -lrt
+		-Llibs -L$(RLS_BIN_PATH) -lbase -lmediasdk -lRtcEngine -pthread -lpthread -ldl -lrt
 	objcopy --only-keep-debug $(RLS_XCODER_TARGET) $(RLS_XCODER_TARGET).sym
 	objcopy --strip-debug $(RLS_XCODER_TARGET)
 	objcopy --add-gnu-debuglink=$(RLS_XCODER_TARGET).sym $(RLS_XCODER_TARGET)
