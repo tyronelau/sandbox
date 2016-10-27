@@ -41,6 +41,10 @@ DBG_OBJ_PATH = debug/$(OBJ_DIR)
 DBG_DEP_PATH = debug/$(DEP_DIR)
 DBG_BIN_PATH = debug/$(BIN_DIR)
 
+.PHONY: all clean debug release pre
+
+all: pre debug release
+
 -include $(addprefix $(DBG_DEP_PATH)/, $(addsuffix .d, $(SOURCES)))
 -include $(addprefix $(RLS_DEP_PATH)/, $(addsuffix .d, $(SOURCES)))
 
@@ -57,10 +61,6 @@ RLS_BASE_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(BA
 RLS_XCODER_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(XCODER_SOURCES))))
 RLS_STUB_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(STUB_SOURCES))))
 RLS_TEST_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(TEST_SOURCES))))
-
-.PHONY: all clean debug release pre
-
-all: pre debug release
 
 $(DBG_OBJ_PATH)/%.o: %.cpp
 	@mkdir -p $(dir $@)
