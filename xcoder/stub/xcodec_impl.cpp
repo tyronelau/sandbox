@@ -93,7 +93,7 @@ int RecorderImpl::Destroy() {
 
 int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
     bool is_dual, uint_t uid, bool decode_audio, bool decode_video,
-    const char *path_prefix) {
+    const char *path_prefix, int idle) {
   int reader_fds[2];
   if (pipe(reader_fds) != 0) {
     SAFE_LOG(ERROR) << "Failed to create a pipe for read: "
@@ -150,6 +150,12 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
     snprintf(uid_str, 16, "%u", uid);
     args.push_back(uid_str);
   }
+
+  char idle_str[16];
+  snprintf(idle_str, 16, "%d", idle);
+
+  args.push_back("--idle");
+  args.push_back(idle_str);
 
   args.push_back(NULL);
 

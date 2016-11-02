@@ -116,9 +116,12 @@ struct Recorder {
 
   virtual ~Recorder() {}
 
+  // |idle|: If the channel has no broadcasters over |idle| seconds,
+  // the xcoder will automatically quit, and you will receive a
+  // |RecorderError| callback.
   virtual int JoinChannel(const char *app_id, const char *channel_name,
       bool is_dual=false, uint_t uid=0, bool decode_audio=false,
-      bool decode_video=false, const char *path_prefix=NULL) = 0;
+      bool decode_video=false, const char *path_prefix=NULL, int idle=300) = 0;
 
   virtual int LeaveChannel() = 0;
 

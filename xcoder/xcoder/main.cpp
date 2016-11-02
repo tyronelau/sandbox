@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
   bool video_decode = false;
   int read_fd = -1;
   int write_fd = -1;
+  int idle = 30000;
 
   LOG(INFO, "video recorder, based on version " GIT_DESC);
 
@@ -41,6 +42,7 @@ int main(int argc, char *argv[]) {
   parser.add_long_opt("read", &read_fd);
   parser.add_long_opt("decode_audio", &audio_decode);
   parser.add_long_opt("decode_video", &video_decode);
+  parser.add_long_opt("idle", &idle);
 
   if (!parser.parse_opts(argc, argv) || key.empty() || name.empty()) {
     std::ostringstream sout;
@@ -56,11 +58,15 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  if (idle < 10) {
+    idle = 10;
+  }
+
   LOG(INFO, "uid %" PRIu32 " from vendor %s is joining channel %s",
       uid, key.c_str(), name.c_str());
 
   event_handler handler(uid, key, name, dual, read_fd, write_fd,
-      audio_decode, video_decode);
+      audio_decode, video_decode, idle);
 
   return handler.run();
 }

@@ -178,9 +178,11 @@ atomic_bool_t event_handler::s_term_sig_;
 
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
     const string &channel_name, bool dual, int read_fd, int write_fd,
-    bool audio_decode, bool video_decode) : uid_(uid), vendor_key_(vendor_key),
-    channel_name_(channel_name), is_dual_(dual), audio_decode_(audio_decode),
-    video_decode_(video_decode), frames_(&loop_, this, 128) {
+    bool audio_decode, bool video_decode, int idle) : uid_(uid),
+    vendor_key_(vendor_key), channel_name_(channel_name), is_dual_(dual),
+    audio_decode_(audio_decode), video_decode_(video_decode),
+    frames_(&loop_, this, 128) {
+  idle_ = idle;
   applite_ = NULL;
   joined_ = false;
   timer_ = NULL;
@@ -394,8 +396,8 @@ void event_handler::onRtcStats(const rtc::RtcStats &stats) {
     last_active_ts_ = nowts;
   }
 
-  if (nowts - last_active_ts_ > 300) {
-    LOG(WARN, "No users in channel for 300 seconds, aborting.");
+  if (nowts - last_active_ts_ > idle_) {
+    LOG(WARN, "No users in channel for %d seconds, aborting.", idle_);
     s_term_sig_ = true;
   }
 }

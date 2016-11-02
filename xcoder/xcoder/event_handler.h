@@ -37,7 +37,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
       const std::string &channel_name,
       bool is_dual, int read_fd,
       int write_fd, bool audio_decode,
-      bool video_decode);
+      bool video_decode, int idle);
 
   ~event_handler();
 
@@ -104,6 +104,7 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
 
   atomic_bool_t joined_;
   int32_t last_active_ts_;
+  int32_t idle_;
 
   std::mutex lock_;
   rtc::IRtcEngineEx *applite_;
