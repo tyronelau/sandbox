@@ -372,12 +372,22 @@ void event_handler::onWarning(int warn, const char *msg) {
 void event_handler::onUserJoined(uid_t uid, int elapsed) {
   SAFE_LOG(INFO) << "offset " << elapsed << " ms: " << uid
     << " joined the channel";
+
+  protocol::user_joined *f = new protocol::user_joined;
+  f->uid = uid;
+
+  frames_.push(frame_ptr_t(f));
 }
 
 void event_handler::onUserOffline(uid_t uid,
     rtc::USER_OFFLINE_REASON_TYPE reason) {
   const char *detail = reason == rtc::USER_OFFLINE_QUIT ? "quit" : "dropped";
   SAFE_LOG(INFO) << "User " << uid << " " << detail;
+
+  protocol::user_dropped *f = new protocol::user_dropped;
+  f->uid = uid;
+
+  frames_.push(frame_ptr_t(f));
 }
 
 void event_handler::onFirstRemoteVideoDecoded(uid_t uid, int width, int height,
