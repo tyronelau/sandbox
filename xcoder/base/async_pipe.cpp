@@ -1,5 +1,8 @@
 #include "base/async_pipe.h"
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -16,6 +19,9 @@ async_pipe_reader::async_pipe_reader(event_loop *loop, int fd,
     pipe_read_listener *listener) {
   loop_ = loop;
   pipe_fd_ = fd;
+
+  int flags = fcntl(pipe_fd_, F_GETFL);
+  fcntl(pipe_fd_, F_SETFL, flags | O_NONBLOCK);
 
   if ((fp_ = fdopen(pipe_fd_, "rb")) == NULL) {
     SAFE_LOG(FATAL) << "Failed to open the pipe to read: " << strerror(errno);
@@ -151,6 +157,9 @@ async_pipe_writer::async_pipe_writer(event_loop *loop, int fd,
     pipe_write_listener *listener) {
   loop_ = loop;
   pipe_fd_ = fd;
+
+  int flags = fcntl(pipe_fd_, F_GETFL);
+  fcntl(pipe_fd_, F_SETFL, flags | O_NONBLOCK);
 
   if ((fp_ = fdopen(pipe_fd_, "wb")) == NULL) {
     SAFE_LOG(FATAL) << "Failed to open the pipe to write: " << strerror(errno);
