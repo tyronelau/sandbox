@@ -227,6 +227,11 @@ void RecorderImpl::timer_callback(int fd, void *context) {
 
 void RecorderImpl::on_timer() {
   if (stopped_) {
+    if (writer_) {
+      protocol::leave_packet pkt;
+      writer_->write_packet(pkt);
+    }
+
     loop_.stop();
   }
 }

@@ -546,16 +546,14 @@ int event_handler::InsertRawAudioPacket(unsigned uid, const unsigned char *paylo
 
   RawAudioPacket pkt;
   while (jitter.GetPacket(pkt) >= 0) {
-    if (writer_) {
-      protocol::aac_frame *f = new protocol::aac_frame;
-      f->uid = uid;
-      f->frame_ms = pkt.timeStamp;
-      f->data = string(pkt.payloadData, pkt.payloadSize);
+    protocol::aac_frame *f = new protocol::aac_frame;
+    f->uid = uid;
+    f->frame_ms = pkt.timeStamp;
+    f->data = string(pkt.payloadData, pkt.payloadSize);
 
-      frames_.push(frame_ptr_t(f));
-    }
+    frames_.push(frame_ptr_t(f));
 
-    delete[] pkt.payloadData;
+    delete []pkt.payloadData;
   }
 
   return 0;

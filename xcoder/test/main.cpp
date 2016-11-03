@@ -28,7 +28,8 @@ class AgoraRecorder : public agora::xcodec::RecorderCallback {
   bool CreateChannel(const string &key, const string &name, uint32_t uid,
       bool decode_audio, bool decode_video);
 
-  bool DestroyChannel();
+  bool LeaveChannel();
+  bool Destroy();
 
   bool Stopped() const;
  private:
@@ -51,12 +52,21 @@ AgoraRecorder::AgoraRecorder() {
 
 AgoraRecorder::~AgoraRecorder() {
   if (recorder_) {
-    DestroyChannel();
+    recorder_->Destroy();
   }
 }
 
 bool AgoraRecorder::Stopped() const {
   return stopped_;
+}
+
+bool AgoraRecorder::Destroy() {
+  if (recorder_) {
+    recorder_->Destroy();
+    recorder_ = NULL;
+  }
+
+  return true;
 }
 
 bool AgoraRecorder::CreateChannel(const string &key, const string &name,
@@ -68,10 +78,9 @@ bool AgoraRecorder::CreateChannel(const string &key, const string &name,
       uid, decode_audio, decode_video);
 }
 
-bool AgoraRecorder::DestroyChannel() {
+bool AgoraRecorder::LeaveChannel() {
   if (recorder_) {
     recorder_->LeaveChannel();
-    recorder_ = NULL;
     stopped_ = true;
   }
 
@@ -80,7 +89,7 @@ bool AgoraRecorder::DestroyChannel() {
 
 void AgoraRecorder::RecorderError(int error, const char *reason) {
   cerr << "Error: " << error << ", " << reason << endl;
-  DestroyChannel();
+  LeaveChannel();
 }
 
 void AgoraRecorder::RemoteUserJoined(unsigned uid) {
@@ -125,7 +134,7 @@ atomic_bool_t s_stop_flag;
 void signal_handler(int signo) {
   (void)signo;
 
-  cerr << "Signal " << signo << endl;
+  // cerr << "Signal " << signo << endl;
   s_stop_flag = true;
 }
 
@@ -140,6 +149,7 @@ int main(int argc, char * const argv[]) {
   s_stop_flag = false;
   signal(SIGQUIT, signal_handler);
   signal(SIGABRT, signal_handler);
+  signal(SIGINT, signal_handler);
   signal(SIGPIPE, SIG_IGN);
 
   opt_parser parser;
@@ -167,7 +177,8 @@ int main(int argc, char * const argv[]) {
   }
 
   if (s_stop_flag) {
-    recorder.DestroyChannel();
+    recorder.LeaveChannel();
+    recorder.Destroy();
   }
 
   return 0;

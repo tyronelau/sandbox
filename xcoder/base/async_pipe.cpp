@@ -114,7 +114,9 @@ void async_pipe_reader::on_read() {
 
     char *next = buffer_ + readed_;
     size_t toread = packet_size_ - readed_;
-    if (fread(next, 1, toread, fp_) != toread) {
+    size_t readed = 0;
+    if ((readed = fread(next, 1, toread, fp_)) != toread) {
+      readed_ = static_cast<uint32_t>(readed_ + readed);
       break;
     }
 
