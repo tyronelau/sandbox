@@ -185,7 +185,7 @@ enum ERROR_CODE_TYPE
     ERR_ADM_START_LOOPBACK  = 1023,
     // 1025, as warning for interruption of adm on ios
     // 1026, as warning for route change of adm on ios
-  
+
     // VDM error code starts from 1500
     ERR_VDM_CAMERA_NOT_AUTHORIZED  = 1501,
 
@@ -774,7 +774,7 @@ public:
     * when local user disconnected by accident, the function will be called(then SDK will try to reconnect itself)
     */
     virtual void onConnectionInterrupted() {}
-    
+
     virtual void onRefreshRecordingServiceStatus(int status) {
         (void)status;
     }
@@ -800,7 +800,7 @@ public:
     }
 
 	/**
-	* 
+	*
 	*/
 	virtual void onStreamMessageError(uid_t uid, int streamId, int code, int missed, int cached) {
         (void)uid;
@@ -1655,7 +1655,7 @@ public:
     int startScreenCapture(HWND windowId) {
         return m_parameter->setUInt("che.video.start_screen_capture", (unsigned int)windowId);
     }
-    
+
     /**
      * specify window id to capture
      * @return return 0 if success or an error code
@@ -1718,15 +1718,15 @@ public:
     int setRemoteRenderMode(uid_t uid, RENDER_MODE_TYPE renderMode) {
         return setObject("che.video.render_mode", "{\"uid\":%u,\"mode\":%d}", uid, renderMode);
     }
-    
+
 	int startRecordingService(const char* recordingKey) {
 		return m_parameter->setString("rtc.api.start_recording_service", recordingKey);
     }
-    
+
     int stopRecordingService(const char* recordingKey) {
 		return m_parameter->setString("rtc.api.stop_recording_service", recordingKey);
     }
-    
+
     int refreshRecordingServiceStatus() {
         return m_parameter->setBool("rtc.api.query_recording_service_status", true);
     }

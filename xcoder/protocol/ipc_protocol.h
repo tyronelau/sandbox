@@ -50,20 +50,20 @@ DECLARE_PACKET_2(recorder_error, RECORDER_ERROR_URI, int32_t, error_code,
 //   uint32_t sample_rates;
 //   uint32_t data;
 //   // std::string data;
-// 
+//
 //   audio_frame() : packet(AUDIO_FRAME_URI) {
 //     std::cout << "\naudio : " << this << std::endl;
 //   }
-// 
+//
 //   ~audio_frame() {
 //     std::cout << "\n~audio : " << this << std::endl;
 //   }
-// 
+//
 //   virtual void unmarshall(base::unpacker &p) {
 //     packet::unmarshall(p);
 //     p >> uid >> frame_ms >> channels >> bits >> sample_rates >> data;
 //   }
-// 
+//
 //   virtual void marshall(base::packer &p) const {
 //     packet::marshall(p);
 //     p << uid << frame_ms << channels << bits << sample_rates << data;

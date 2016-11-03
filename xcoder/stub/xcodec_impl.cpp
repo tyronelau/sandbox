@@ -91,6 +91,36 @@ int RecorderImpl::Destroy() {
   return 0;
 }
 
+struct error_info {
+  int error;
+  int write_fd;
+};
+
+// this function get called in another process.
+// be careful!
+void RecorderImpl::error_callback(int err, void *context) {
+  error_info *info = reinterpret_cast<error_info *>(context);
+  const char *err_str = strerror(err);
+
+  protocol::recorder_error detail;
+  detail.error_code = err;
+  detail.reason = err_str;
+
+  base::packer pkr;
+  pkr << detail;
+  pkr.pack();
+
+
+  // takes rvalue away
+  std::vector<char> buffer = pkr.take_buffer();
+  if (write(info->write_fd, &buffer[0], buffer.size()) < 0) {
+    LOG(ERROR, "Failed to write error packet! %d, %m", info->write_fd);
+  }
+
+  LOG(INFO, "CONTINUE ...%d", static_cast<int>(buffer.size()));
+  sleep(100);
+}
+
 int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
     bool is_dual, uint_t uid, bool decode_audio, bool decode_video,
     const char *path_prefix, int idle) {
@@ -159,9 +189,13 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
 
   args.push_back(NULL);
 
+  error_info info;
+  info.write_fd = reader_fds[1];
+  info.error = 0;
+
   base::process p;
   int skipped[2] = {writer_fds[0], reader_fds[1]};
-  if (!p.start(&args[0], false, skipped, 2)) {
+  if (!p.start(&args[0], false, skipped, 2, &error_callback, &info)) {
     close(reader_fds[0]);
     close(reader_fds[1]);
     close(writer_fds[0]);

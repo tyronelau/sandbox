@@ -46,10 +46,12 @@ class process {
   ~process();
 
   bool start(const char *cmd, bool inherit_fd=false,
-      const int *skipped_fds=NULL, int len=0);
+      const int *skipped_fds=NULL, int len=0, void (*error)(int, void*)=NULL,
+      void *context=NULL);
 
   bool start(const char * const args[], bool inherit_fd=false,
-      const int *skipped_fds=NULL, int len=0);
+      const int *skipped_fds=NULL, int len=0, void (*error)(int, void *)=NULL,
+      void *context=NULL);
 
   bool stop();
   bool terminate();

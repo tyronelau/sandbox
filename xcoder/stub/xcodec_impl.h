@@ -41,6 +41,7 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
   virtual bool on_error(base::async_pipe_reader *reader, short events);
   virtual bool on_error(base::async_pipe_writer *writer, short events);
  private:
+  static void error_callback(int err, void *context);
   static void timer_callback(int fd, void *context);
   void on_timer();
 

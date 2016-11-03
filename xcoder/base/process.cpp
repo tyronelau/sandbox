@@ -104,7 +104,8 @@ void process::swap(process &rhs) {
 }
 
 bool process::start(const char *const exec_args[], bool inherit_fd,
-    const int *skipped_fds, int len) {
+    const int *skipped_fds, int len, void (*error)(int, void *),
+    void *context) {
   if (exec_args[0] == NULL) {
     LOG(ERROR, "No arugments!");
     return false;
@@ -161,12 +162,18 @@ bool process::start(const char *const exec_args[], bool inherit_fd,
 
   execvp(const_cast<char*>(exec_args[0]), const_cast<char *const *>(&exec_args[0]));
   LOG(FATAL, "Failed to call execvp(%s): %s", exec_args[0], strerror(errno));
+
+  if (error) {
+    (*error)(errno, context);
+  }
+
   exit(-100);
   return false; // never goes here.
 }
 
 bool process::start(const char *exec_cmd, bool inherit_fd,
-    const int *skipped, int len)  {
+    const int *skipped, int len, void (*error)(int, void *),
+    void *context)  {
   std::istringstream sin(exec_cmd);
   std::string arg;
   std::vector<std::string> args;
@@ -184,7 +191,7 @@ bool process::start(const char *exec_cmd, bool inherit_fd,
     exec_args[i] = &args[i][0];
   }
 
-  return start(&exec_args[0], inherit_fd, skipped, len);
+  return start(&exec_args[0], inherit_fd, skipped, len, error, context);
 }
 
 bool process::wait() {
