@@ -448,7 +448,7 @@ bool event_handler::on_error(base::async_pipe_reader *reader, short events) {
 
   assert(reader == reader_);
 
-  LOG(INFO, "Reading pipe broken");
+  LOG(INFO, "Reading pipe broken: %d", events);
   loop_.stop();
 
   return true;
@@ -460,7 +460,7 @@ bool event_handler::on_error(base::async_pipe_writer *writer, short events) {
 
   assert(writer == writer_);
 
-  LOG(INFO, "Writing pipe broken");
+  LOG(INFO, "Writing pipe broken: %d", events);
   loop_.stop();
 
   return true;
