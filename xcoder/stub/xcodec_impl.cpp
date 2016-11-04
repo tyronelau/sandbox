@@ -68,11 +68,11 @@ RecorderImpl::RecorderImpl(RecorderCallback *callback) {
   writer_ = NULL;
   timer_ = NULL;
 
-  SAFE_LOG(INFO, "A recorder instance created: %x", this);
+  LOG(INFO, "A recorder instance created: %x", this);
 }
 
 RecorderImpl::~RecorderImpl() {
-  SAFE_LOG(INFO, "Recorder %x is ready to be destroyed", this);
+  LOG(INFO, "Recorder %x is ready to be destroyed", this);
 
   if (reader_) {
     delete reader_;
