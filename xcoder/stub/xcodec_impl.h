@@ -38,8 +38,8 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
   virtual bool on_receive_packet(base::async_pipe_reader *reader,
       base::unpacker &pkr, uint16_t uri);
 
-  virtual bool on_error(base::async_pipe_reader *reader, short events);
-  virtual bool on_error(base::async_pipe_writer *writer, short events);
+  virtual bool on_error(base::async_pipe_reader *reader, int events);
+  virtual bool on_error(base::async_pipe_writer *writer, int events);
  private:
   static void error_callback(int err, void *context);
   static void timer_callback(int fd, void *context);

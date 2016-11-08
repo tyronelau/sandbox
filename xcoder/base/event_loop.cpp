@@ -99,7 +99,7 @@ int event_loop::run() {
 
 int event_loop::add_watcher(int fd, void *context,
     event_callback_t read_handler, event_callback_t write_handler,
-    event_callback_t error_handler) {
+    error_callback_t error_handler) {
   event e = {fd, context, read_handler, write_handler, error_handler};
   events_[fd] = e;
 
@@ -108,7 +108,7 @@ int event_loop::add_watcher(int fd, void *context,
 
 int event_loop::remove_watcher(int fd, void *context,
     event_callback_t read_handler, event_callback_t write_handler,
-    event_callback_t error_handler) {
+    error_callback_t error_handler) {
   (void)context;
   (void)read_handler;
   (void)write_handler;
@@ -190,7 +190,7 @@ void event_loop::on_error_event(int fd, int events) {
 
   const event &e = it->second;
   if (e.error_callback)
-    (*e.error_callback)(fd, e.context);
+    (*e.error_callback)(fd, e.context, events);
 }
 
 timer_event* event_loop::add_timer(int32_t interval, event_callback_t callback,

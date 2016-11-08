@@ -37,7 +37,7 @@ class event_queue {
   void close();
  private:
   static void read_callback(int fd, void *context);
-  static void error_callback(int fd, void *context);
+  static void error_callback(int fd, void *context, int events);
 
   void handle_events();
   void handle_error();
@@ -114,8 +114,9 @@ void event_queue<Elem>::handle_events() {
 }
 
 template <typename Elem>
-void event_queue<Elem>::error_callback(int fd, void *context) {
+void event_queue<Elem>::error_callback(int fd, void *context, int events) {
   (void)fd;
+  (void)events;
 
   event_queue<Elem> *p = reinterpret_cast<event_queue<Elem> *>(context);
   assert(fd == p->queue_.GetEventFD());

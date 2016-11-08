@@ -11,6 +11,7 @@ namespace agora {
 namespace base {
 
 typedef void (*event_callback_t)(int fd, void *context);
+typedef void (*error_callback_t)(int fd, void *context, int events);
 
 struct timer_event;
 
@@ -29,10 +30,10 @@ class event_loop {
   bool remove_timer(timer_event *e);
 
   int add_watcher(int fd, void *context, event_callback_t read_handler,
-      event_callback_t write_handler, event_callback_t error_handler);
+      event_callback_t write_handler, error_callback_t error_handler);
 
   int remove_watcher(int fd, void *context, event_callback_t read_handler,
-      event_callback_t write_handler, event_callback_t error_handler);
+      event_callback_t write_handler, error_callback_t error_handler);
  private:
   void prepare_poll_events();
 
@@ -50,7 +51,7 @@ class event_loop {
 
     event_callback_t read_callback;
     event_callback_t write_callback;
-    event_callback_t error_callback;
+    error_callback_t error_callback;
   };
  private:
   bool stop_;

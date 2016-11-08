@@ -78,12 +78,12 @@ void async_pipe_reader::read_callback(int fd, void *context) {
   reader->on_read();
 }
 
-void async_pipe_reader::error_callback(int fd, void *context) {
+void async_pipe_reader::error_callback(int fd, void *context, int events) {
   (void)fd;
 
   async_pipe_reader *reader = reinterpret_cast<async_pipe_reader *>(context);
   assert(fd == reader->get_pipe_fd());
-  reader->on_error();
+  reader->on_error(events);
 }
 
 void async_pipe_reader::on_read() {
@@ -145,9 +145,9 @@ void async_pipe_reader::on_read() {
   }
 }
 
-void async_pipe_reader::on_error() {
+void async_pipe_reader::on_error(int events) {
   if (listener_) {
-    listener_->on_error(this, 0);
+    listener_->on_error(this, events);
   }
 }
 
@@ -289,12 +289,12 @@ void async_pipe_writer::enable_write_callback() {
   loop_->add_watcher(pipe_fd_, this, NULL, &write_callback, &error_callback);
 }
 
-void async_pipe_writer::error_callback(int fd, void *context) {
+void async_pipe_writer::error_callback(int fd, void *context, int events) {
   (void)fd;
 
   async_pipe_writer *writer = reinterpret_cast<async_pipe_writer *>(context);
   assert(fd == writer->get_pipe_fd());
-  writer->on_error();
+  writer->on_error(events);
 }
 
 int async_pipe_writer::get_pipe_fd() const {
@@ -305,9 +305,9 @@ void async_pipe_writer::remove_callback() {
   loop_->remove_watcher(pipe_fd_, this, NULL, NULL, NULL);
 }
 
-void async_pipe_writer::on_error() {
+void async_pipe_writer::on_error(int events) {
   if (listener_) {
-    listener_->on_error(this, 0);
+    listener_->on_error(this, events);
   }
 }
 

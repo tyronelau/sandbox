@@ -442,7 +442,7 @@ void event_handler::on_leave(int reason) {
   loop_.stop();
 }
 
-bool event_handler::on_error(base::async_pipe_reader *reader, short events) {
+bool event_handler::on_error(base::async_pipe_reader *reader, int events) {
   (void)reader;
   (void)events;
 
@@ -454,7 +454,7 @@ bool event_handler::on_error(base::async_pipe_reader *reader, short events) {
   return true;
 }
 
-bool event_handler::on_error(base::async_pipe_writer *writer, short events) {
+bool event_handler::on_error(base::async_pipe_writer *writer, int events) {
   (void)writer;
   (void)events;
 

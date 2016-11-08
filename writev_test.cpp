@@ -71,7 +71,7 @@ int run_client(const ipv4 &remote, uint16_t port) {
     cout << now_ms() << ": Ready to send data" << endl;
     if (::writev(skt, arr, 2) == -1) {
       cout << now_ms() << ": " << errno << strerror(errno) << endl;
-      if (errno == ETIMEDOUT || errno == EAGAIN) {
+      if (errno == ETIMEDOUT || errno == EAGAIN || errno == EPIPE || errno == EBADF) {
         // NOTE(liuyong): Treat it as an unrecoverable error
         cout << now_ms() << " timed out: " << endl;
         break;

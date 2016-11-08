@@ -67,8 +67,8 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   virtual bool on_receive_packet(base::async_pipe_reader *reader,
       base::unpacker &pkr, uint16_t uri);
 
-  virtual bool on_error(base::async_pipe_reader *reader, short events);
-  virtual bool on_error(base::async_pipe_writer *writer, short events);
+  virtual bool on_error(base::async_pipe_reader *reader, int events);
+  virtual bool on_error(base::async_pipe_writer *writer, int events);
 
   // Inherited from |async_event_handler|
   virtual void on_event(frame_ptr_t frame);

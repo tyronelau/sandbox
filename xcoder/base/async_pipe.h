@@ -20,12 +20,12 @@ struct pipe_read_listener {
   virtual bool on_receive_packet(async_pipe_reader *reader, unpacker &pkr,
       uint16_t uri) = 0;
 
-  virtual bool on_error(async_pipe_reader *reader, short events) = 0;
+  virtual bool on_error(async_pipe_reader *reader, int events) = 0;
 };
 
 struct pipe_write_listener {
   // virtual bool on_ready_write(async_pipe_writer *writer) = 0;
-  virtual bool on_error(async_pipe_writer *writer, short events) = 0;
+  virtual bool on_error(async_pipe_writer *writer, int events) = 0;
 };
 
 class async_pipe_reader {
@@ -42,11 +42,11 @@ class async_pipe_reader {
   void remove_callback();
 
   void on_read();
-  void on_error();
+  void on_error(int events);
   void destroy();
 
   static void read_callback(int fd, void *context);
-  static void error_callback(int fd, void *context);
+  static void error_callback(int fd, void *context, int events);
  private:
   event_loop *loop_;
 
@@ -81,11 +81,11 @@ class async_pipe_writer {
   void remove_callback();
 
   bool on_write();
-  void on_error();
+  void on_error(int events);
   void destroy();
 
   static void write_callback(int fd, void *context);
-  static void error_callback(int fd, void *context);
+  static void error_callback(int fd, void *context, int events);
  private:
   event_loop *loop_;
 

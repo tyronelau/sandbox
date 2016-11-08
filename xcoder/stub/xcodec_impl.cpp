@@ -322,7 +322,7 @@ bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
   return true;
 }
 
-bool RecorderImpl::on_error(async_pipe_reader *reader, short events) {
+bool RecorderImpl::on_error(async_pipe_reader *reader, int events) {
   (void)reader;
   (void)events;
 
@@ -334,7 +334,7 @@ bool RecorderImpl::on_error(async_pipe_reader *reader, short events) {
   return true;
 }
 
-bool RecorderImpl::on_error(async_pipe_writer *writer, short events) {
+bool RecorderImpl::on_error(async_pipe_writer *writer, int events) {
   (void)writer;
   (void)events;
 
