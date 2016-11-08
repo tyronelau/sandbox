@@ -101,7 +101,7 @@ void async_pipe_reader::on_read() {
       if (packet_size_ <= 6 || packet_size_ > 64 * 1024 * 104) {
         SAFE_LOG(ERROR) << "Illegal packet size: " << packet_size_;
         if (listener_) {
-          listener_->on_error(this, 0);
+          listener_->on_error(this, 0x1000);
         }
         break;
       }
@@ -140,9 +140,9 @@ void async_pipe_reader::on_read() {
 
   processing_ = false;
 
-  if (feof(fp_) && listener_) {
-    listener_->on_error(this, 0);
-  }
+  // if (feof(fp_) && listener_) {
+  //   listener_->on_error(this, 0x2000);
+  // }
 }
 
 void async_pipe_reader::on_error(int events) {
@@ -216,8 +216,8 @@ bool async_pipe_writer::write_packet(const packet &p) {
 
     if (written_ < buffer_.size()) {
       writable_ = false;
-      if (feof(fp_) || ferror(fp_)) {
-        listener_->on_error(this, 0);
+      if (feof(fp_)) {
+        listener_->on_error(this, 0x4000);
         return false;
       }
       enable_write_callback();

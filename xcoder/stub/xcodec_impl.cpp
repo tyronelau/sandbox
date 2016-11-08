@@ -212,8 +212,9 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
 
   process_.swap(p);
 
-  SAFE_LOG(INFO) << "Reading pipe: " << reader_fds[0];
-  SAFE_LOG(INFO) << "Writing pipe: " << writer_fds[1];
+  SAFE_LOG(INFO) << "The xcoder created. Reading pipe: " << reader_fds[0]
+      << ", writing pipe: " << writer_fds[1] << ", pid: "
+      << process_.get_pid();
 
   reader_ = new (std::nothrow)async_pipe_reader(&loop_, reader_fds[0], this);
   writer_ = new (std::nothrow)async_pipe_writer(&loop_, writer_fds[1], this);

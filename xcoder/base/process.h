@@ -59,6 +59,8 @@ class process {
 
   void swap(process &rhs);
 
+  int get_pid() const;
+
   // timely calls this function
   // this function is mutable because we need to update the internal state.
   bool is_stopped(exit_state *state);
@@ -72,6 +74,10 @@ class process {
   int process_fd_;
   exit_state state_;
 };
+
+inline int process::get_pid() const {
+  return process_fd_;
+}
 
 }
 }
