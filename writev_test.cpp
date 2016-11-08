@@ -49,20 +49,30 @@ int run_client(const ipv4 &remote, uint16_t port) {
   t.tv_usec = 0;
 
   if (-1 == setsockopt(skt, SOL_SOCKET, SO_SNDTIMEO, &t, sizeof(t))) {
-    cerr << "Failed to set socket: " << skt << ", options" << endl;
+    cerr << "Failed to set socket send time out " << skt << endl;
+    goto cleanup;
+  }
+
+  if (-1 == setsockopt(skt, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof(t))) {
+    cerr << "Failed to set socket recv time out " << skt  << endl;
+    goto cleanup;
   }
 
   while (true) {
     iovec arr[2];
-    arr[0].iov_base = const_cast<void *>(reinterpret_cast<const void *>("hello "));
-    arr[0].iov_len = 6;
-    arr[1].iov_base = const_cast<void *>(reinterpret_cast<const void *>("test\n"));
-    arr[1].iov_len = 5;
+    char buf1[2048];
+    char buf2[2048];
+
+    arr[0].iov_base = const_cast<void *>(reinterpret_cast<const void *>(buf1));
+    arr[0].iov_len = 2048;
+    arr[1].iov_base = const_cast<void *>(reinterpret_cast<const void *>(buf2));
+    arr[1].iov_len = 2048;
 
     cout << now_ms() << ": Ready to send data" << endl;
     if (::writev(skt, arr, 2) == -1) {
       cout << now_ms() << ": " << errno << strerror(errno) << endl;
-      if (errno == ETIMEDOUT) {
+      if (errno == ETIMEDOUT || errno == EAGAIN) {
+        // NOTE(liuyong): Treat it as an unrecoverable error
         cout << now_ms() << " timed out: " << endl;
         break;
       }
@@ -79,8 +89,9 @@ void receive_data(int fd, const sockaddr_in &addr) {
   while (true) {
     char buf[11];
     ssize_t readed = recv(fd, buf, sizeof(buf), 0);
-    if (readed == -1 || errno != EINTR) {
-      cerr << now_ms() << ":Unrecoverable error! " << strerror(errno) << endl;
+    if (readed == -1 && errno != EINTR) {
+      cerr << now_ms() << ", readed: " << readed << ": Unrecoverable error! "
+          << strerror(errno) << endl;
       break;
     }
   }
