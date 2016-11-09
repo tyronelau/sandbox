@@ -52,6 +52,7 @@ class async_pipe_reader {
 
   int pipe_fd_;
   FILE *fp_;
+  // FILE *raw_;
 
   uint32_t packet_size_;
   uint32_t readed_;
@@ -91,6 +92,7 @@ class async_pipe_writer {
 
   int pipe_fd_;
   FILE *fp_;
+  // FILE *raw_;
 
   size_t written_;
   std::vector<char> buffer_;
