@@ -33,6 +33,11 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
 
   // called by the SDK user, possilbly in either event or user thread.
   virtual int LeaveChannel();
+
+  // called by the SDK user.
+  // Preconditions:
+  //   |LeaveChannel| get called;
+  //   Not in the callback thread
   virtual int Destroy();
  private:
   virtual bool on_receive_packet(base::async_pipe_reader *reader,

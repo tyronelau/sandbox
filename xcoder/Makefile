@@ -34,6 +34,7 @@ BASE_SOURCES = $(wildcard base/*.cpp)
 XCODER_SOURCES  = $(wildcard xcoder/*.cpp)
 STUB_SOURCES  = $(wildcard stub/*.cpp)
 TEST_SOURCES  = $(wildcard test/*.cpp)
+DEMO_SOURCES  = $(wildcard demo/*.cpp)
 
 SOURCES = $(BASE_SOURCES) $(XCODER_SOURCES) $(STUB_SOURCES) $(TEST_SOURCES)
 
@@ -52,6 +53,7 @@ DBG_BASE_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(BA
 DBG_XCODER_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(XCODER_SOURCES))))
 DBG_STUB_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(STUB_SOURCES))))
 DBG_TEST_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(TEST_SOURCES))))
+DBG_DEMO_OBJECTS = $(addprefix $(DBG_OBJ_PATH)/, $(addsuffix .o, $(basename $(DEMO_SOURCES))))
 
 RLS_OBJ_PATH = release/$(OBJ_DIR)
 RLS_DEP_PATH = release/$(DEP_DIR)
@@ -61,6 +63,7 @@ RLS_BASE_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(BA
 RLS_XCODER_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(XCODER_SOURCES))))
 RLS_STUB_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(STUB_SOURCES))))
 RLS_TEST_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(TEST_SOURCES))))
+RLS_DEMO_OBJECTS = $(addprefix $(RLS_OBJ_PATH)/, $(addsuffix .o, $(basename $(DEMO_SOURCES))))
 
 $(DBG_OBJ_PATH)/%.o: %.cpp
 	@mkdir -p $(dir $@)
@@ -93,12 +96,14 @@ $(RLS_OBJ_PATH)/%.o: %.c
 DBG_BASE_TARGET = $(DBG_BIN_PATH)/libbase.a
 DBG_XCODER_TARGET = $(DBG_BIN_PATH)/xcoder
 DBG_STUB_TARGET = $(DBG_BIN_PATH)/libstub.a
-DBG_TEST_TARGET = $(DBG_BIN_PATH)/recorder_test
+DBG_DEMO_TARGET = $(DBG_BIN_PATH)/recorder_demo
+DBG_TEST_TARGET = $(DBG_BIN_PATH)/base_test
 
 RLS_BASE_TARGET = $(RLS_BIN_PATH)/libbase.a
 RLS_XCODER_TARGET = $(RLS_BIN_PATH)/xcoder
 RLS_STUB_TARGET = $(RLS_BIN_PATH)/libstub.a
-RLS_TEST_TARGET = $(RLS_BIN_PATH)/recorder_test
+RLS_DEMO_TARGET = $(RLS_BIN_PATH)/recorder_demo
+RLS_TEST_TARGET = $(RLS_BIN_PATH)/base_test
 
 $(DBG_BASE_TARGET): $(DBG_BASE_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -109,6 +114,11 @@ $(DBG_XCODER_TARGET): $(DBG_XCODER_OBJECTS) $(DBG_BASE_TARGET) \
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(DBG_XCODER_OBJECTS) \
 		-Llibs -L$(DBG_BIN_PATH) -lbase -lmediasdk -lRtcEngine -pthread -lpthread -lasan -ldl
+
+$(DBG_DEMO_TARGET): $(DBG_STUB_TARGET) $(DBG_BASE_TARGET) $(DBG_DEMO_OBJECTS)
+	@mkdir -p $(dir $@)
+	$(LINK) $(LDFLAGS) -o "$@" $(DBG_DEMO_OBJECTS) \
+		-Llibs -L$(DBG_BIN_PATH) -lstub -lbase -pthread -lpthread -lasan
 
 $(DBG_TEST_TARGET): $(DBG_STUB_TARGET) $(DBG_BASE_TARGET) $(DBG_TEST_OBJECTS)
 	@mkdir -p $(dir $@)
@@ -132,18 +142,23 @@ $(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) \
 	objcopy --strip-debug $(RLS_XCODER_TARGET)
 	objcopy --add-gnu-debuglink=$(RLS_XCODER_TARGET).sym $(RLS_XCODER_TARGET)
 
+$(RLS_DEMO_TARGET): $(RLS_STUB_TARGET) $(RLS_BASE_TARGET) $(RLS_DEMO_OBJECTS)
+	@mkdir -p $(dir $@)
+	$(LINK) $(LDFLAGS) -o "$@" $(RLS_DEMO_OBJECTS) \
+		-Llibs -L$(RLS_BIN_PATH) -lstub -lbase -pthread -lpthread
+
 $(RLS_TEST_TARGET): $(RLS_STUB_TARGET) $(RLS_BASE_TARGET) $(RLS_TEST_OBJECTS)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_TEST_OBJECTS) \
-		-Llibs -L$(RLS_BIN_PATH) -lstub -lbase -pthread -lpthread
+		-Llibs -L$(RLS_BIN_PATH) -lstub -lbase -pthread -lpthread -lasan
 
 $(RLS_STUB_TARGET): $(RLS_STUB_OBJECTS)
 	@mkdir -p $(dir $@)
 	ar cqs "$@" $^
 
-debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET) $(DBG_STUB_TARGET) $(DBG_TEST_TARGET)
+debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET) $(DBG_STUB_TARGET) $(DBG_DEMO_TARGET) $(DBG_TEST_TARGET)
 
-release: $(RLS_BASE_TARGET) $(RLS_XCODER_TARGET) $(RLS_STUB_TARGET) $(RLS_TEST_TARGET)
+release: $(RLS_BASE_TARGET) $(RLS_XCODER_TARGET) $(RLS_STUB_TARGET) $(RLS_DEMO_TARGET) $(RLS_TEST_TARGET)
 
 pre:
 	@mkdir -p $(DBG_OBJ_PATH)

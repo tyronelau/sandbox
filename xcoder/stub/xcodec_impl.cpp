@@ -199,7 +199,7 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
 
   base::process p;
   int skipped[2] = {writer_fds[0], reader_fds[1]};
-  if (!p.start(&args[0], false, skipped, 2, &error_callback, &info)) {
+  if (!p.start(&args[0], false, skipped, 2, NULL, NULL)) {
     close(reader_fds[0]);
     close(reader_fds[1]);
     close(writer_fds[0]);

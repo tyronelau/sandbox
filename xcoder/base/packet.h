@@ -46,24 +46,24 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
   };
 
 #define DECLARE_PACKET_1(name, u, type1, name1) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     name() \
       : packet(u) \
       , name1() \
     {} \
-    virtual void unmarshall(base::unpacker &p) { \
+    virtual void unmarshall(agora::base::unpacker &p) { \
       packet::unmarshall(p); \
       p >> name1; \
     } \
-    virtual void marshall(base::packer &p)  const { \
+    virtual void marshall(agora::base::packer &p)  const { \
       packet::marshall(p); \
       p << name1; \
     } \
   };
 
 #define DECLARE_PACKET_2(name, u, type1, name1, type2, name2) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     name() \
@@ -71,18 +71,18 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
       , name1() \
       , name2() \
     {} \
-    virtual void unmarshall(base::unpacker &p) { \
+    virtual void unmarshall(agora::base::unpacker &p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2; \
     } \
-    virtual void marshall(base::packer &p) const {  \
+    virtual void marshall(agora::base::packer &p) const {  \
       packet::marshall(p); \
       p << name1 << name2; \
     } \
   };
 
 #define DECLARE_PACKET_3(name, u, type1, name1, type2, name2, type3, name3) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     type3 name3; \
@@ -92,11 +92,11 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
       , name2() \
       , name3() \
     {} \
-    virtual void unmarshall(base::unpacker& p) { \
+    virtual void unmarshall(agora::base::unpacker& p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2 >> name3; \
     } \
-    virtual void marshall(base::packer& p) const { \
+    virtual void marshall(agora::base::packer& p) const { \
       packet::marshall(p); \
       p << name1 << name2 << name3; \
     } \
@@ -104,7 +104,7 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
 
 #define DECLARE_PACKET_4(name, u, type1, name1, type2, name2, \
     type3, name3, type4, name4) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     type3 name3; \
@@ -116,11 +116,11 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
       , name3() \
       , name4() \
     {} \
-    virtual void unmarshall(base::unpacker &p) { \
+    virtual void unmarshall(agora::base::unpacker &p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2 >> name3 >> name4; \
     } \
-    virtual void marshall(base::packer &p) const { \
+    virtual void marshall(agora::base::packer &p) const { \
       packet::marshall(p); \
       p << name1 << name2 << name3 << name4; \
     } \
@@ -128,7 +128,7 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
 
 #define DECLARE_PACKET_5(name, u, type1, name1, type2, name2, type3, name3, \
     type4, name4, type5, name5) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     type3 name3; \
@@ -154,7 +154,7 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
 
 #define DECLARE_PACKET_6(name, u, type1, name1, type2, name2, type3, name3, \
     type4, name4, type5, name5, type6, name6) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     type3 name3; \
@@ -170,11 +170,11 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
       , name5() \
       , name6() \
     {} \
-    virtual void unmarshall(base::unpacker &p) { \
+    virtual void unmarshall(agora::base::unpacker &p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2 >> name3 >> name4 >> name5 >> name6; \
     } \
-    virtual void marshall(base::packer &p) const { \
+    virtual void marshall(agora::base::packer &p) const { \
       packet::marshall(p); \
       p << name1 << name2 << name3 << name4 << name5 << name6; \
     } \
@@ -182,7 +182,7 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
 
 #define DECLARE_PACKET_7(name, u, type1, name1, type2, name2, type3, name3, \
     type4, name4, type5, name5, type6, name6, type7, name7) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     type3 name3; \
@@ -200,11 +200,11 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
       , name6() \
       , name7() \
     {} \
-    virtual void unmarshall(base::unpacker &p) { \
+    virtual void unmarshall(agora::base::unpacker &p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2 >> name3 >> name4 >> name5 >> name6 >> name7; \
     } \
-    virtual void marshall(base::packer &p) const { \
+    virtual void marshall(agora::base::packer &p) const { \
       packet::marshall(p); \
       p << name1 << name2 << name3 << name4 << name5 << name6 << name7; \
     } \
@@ -212,7 +212,7 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
 
 #define DECLARE_PACKET_8(name, u, type1, name1, type2, name2, type3, name3, \
     type4, name4, type5, name5, type6, name6, type7, name7, type8, name8) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     type3 name3; \
@@ -224,12 +224,12 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
     name() : packet(u), name1(), name2(), name3(), name4(), name5(), name6(), \
         name7(), name8() { \
     } \
-    virtual void unmarshall(base::unpacker &p) { \
+    virtual void unmarshall(agora::base::unpacker &p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2 >> name3 >> name4 >> name5 >> name6 \
           >> name7 >> name8; \
     } \
-    virtual void marshall(base::packer &p) const { \
+    virtual void marshall(agora::base::packer &p) const { \
       packet::marshall(p); \
       p << name1 << name2 << name3 << name4 << name5 << name6 \
           << name7 << name8; \
@@ -239,7 +239,7 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
 #define DECLARE_PACKET_9(name, u, type1, name1, type2, name2, type3, name3, \
     type4, name4, type5, name5, type6, name6, type7, name7, type8, name8, \
     type9, name9) \
-  struct name : base::packet { \
+  struct name : agora::base::packet { \
     type1 name1; \
     type2 name2; \
     type3 name3; \
@@ -252,12 +252,12 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
     name() : packet(u), name1(), name2(), name3(), name4(), name5(), name6(), \
         name7(), name8(), name9() { \
     } \
-    virtual void unmarshall(base::unpacker &p) { \
+    virtual void unmarshall(agora::base::unpacker &p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2 >> name3 >> name4 >> name5 >> name6 >> name7 \
           >> name8 >> name9; \
     } \
-    virtual void marshall(base::packer &p) const { \
+    virtual void marshall(agora::base::packer &p) const { \
       packet::marshall(p); \
       p << name1 << name2 << name3 << name4 << name5 << name6 << name7 \
           << name8 << name9; \

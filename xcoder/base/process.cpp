@@ -106,6 +106,9 @@ void process::swap(process &rhs) {
 bool process::start(const char *const exec_args[], bool inherit_fd,
     const int *skipped_fds, int len, void (*error)(int, void *),
     void *context) {
+  (void)error;
+  (void)context;
+
   if (exec_args[0] == NULL) {
     LOG(ERROR, "No arugments!");
     return false;
@@ -163,11 +166,11 @@ bool process::start(const char *const exec_args[], bool inherit_fd,
   execvp(const_cast<char*>(exec_args[0]), const_cast<char *const *>(&exec_args[0]));
   LOG(FATAL, "Failed to call execvp(%s): %s", exec_args[0], strerror(errno));
 
-  if (error) {
-    (*error)(errno, context);
-  }
+  // if (error) {
+  //   (*error)(errno, context);
+  // }
 
-  exit(-100);
+  _Exit(-100);
   return false; // never goes here.
 }
 
