@@ -2,6 +2,7 @@
 
 #include <unistd.h>
 #include <cassert>
+#include <cerrno>
 #include <cstring>
 
 namespace agora {
@@ -11,6 +12,7 @@ static const unsigned kDefaultSize = 128 * 1024;
 buffered_pipe::buffered_pipe(int fd, open_mode mode) {
   fd_ = fd;
   mode_ = mode;
+  eof_ = false;
 
   buffer_.resize(kDefaultSize);
 
@@ -129,22 +131,12 @@ bool buffered_pipe::underflow() {
   read_.end_ptr = read_.read_ptr;
 
   ssize_t readed = read(fd_, read_.read_ptr, buffer_.size());
-  if (readed <= 0)
+  if (readed <= 0) {
+    eof_ = (readed == 0);
     return false;
+  }
 
   read_.end_ptr = read_.read_ptr + readed;
-  return true;
-}
-
-bool buffered_pipe::is_eof() {
-  // NOT IMPLMENTED.
-  if (mode_ != kRead)
-    return false;
-
-  if (read_.read_ptr != read_.end_ptr)
-    return false;
-
-  assert(false);
   return true;
 }
 
@@ -158,8 +150,12 @@ bool buffered_pipe::overflow() {
 bool buffered_pipe::flush_internal() {
   size_t n = static_cast<size_t>(write_.end_ptr - write_.write_ptr);
   ssize_t written = write(fd_, write_.write_ptr, n);
-  if (written <= 0)
+  if (written <= 0) {
+    if (written == -1 && errno == EPIPE) {
+      eof_ = true;
+    }
     return false;
+  }
 
   write_.write_ptr += written;
   if (write_.write_ptr == write_.end_ptr) {

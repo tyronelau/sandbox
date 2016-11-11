@@ -53,7 +53,7 @@ class async_pipe_reader {
   event_loop *loop_;
 
   int pipe_fd_;
-  FILE *fp_;
+  buffered_pipe *fp_;
   // FILE *raw_;
 
   uint32_t packet_size_;
@@ -93,7 +93,7 @@ class async_pipe_writer {
   event_loop *loop_;
 
   int pipe_fd_;
-  FILE *fp_;
+  buffered_pipe *fp_;
   // FILE *raw_;
 
   size_t written_;

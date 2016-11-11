@@ -25,7 +25,7 @@ class buffered_pipe {
 
   bool flush();
 
-  bool is_eof();
+  bool eof() const;
   bool has_error() const;
  private:
   bool underflow();
@@ -35,6 +35,7 @@ class buffered_pipe {
  private:
   int fd_;
   open_mode mode_;
+  bool eof_;
 
   std::vector<char> buffer_;
 
@@ -51,6 +52,10 @@ class buffered_pipe {
     char *end_ptr;
   } write_;
 };
+
+inline bool buffered_pipe::eof() const {
+  return eof_;
+}
 
 }
 }
