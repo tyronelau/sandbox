@@ -5,6 +5,8 @@
 #include <queue>
 #include <vector>
 
+#include "base/buffered_pipe.h"
+
 #include "protocol/ipc_protocol.h"
 
 namespace agora {

@@ -23,6 +23,7 @@ async_pipe_reader::async_pipe_reader(event_loop *loop, int fd,
   int flags = fcntl(pipe_fd_, F_GETFL);
   fcntl(pipe_fd_, F_SETFL, flags | O_NONBLOCK);
 
+  // fp_ = new buffered_pipe(pipe_fd_, kRead);
   if ((fp_ = fdopen(pipe_fd_, "rb")) == NULL) {
     SAFE_LOG(FATAL) << "Failed to open the pipe to read: " << strerror(errno);
     return;
@@ -50,6 +51,7 @@ async_pipe_reader::~async_pipe_reader() {
 
   if (fp_) {
     fclose(fp_);
+    // delete fp_;
   }
 }
 
