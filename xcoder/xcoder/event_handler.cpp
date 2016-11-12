@@ -170,7 +170,7 @@ int peer_stream::onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
   (void)buffer;
   (void)length;
 
-  assert(false);
+  // assert(false);
   return -1;
 }
 

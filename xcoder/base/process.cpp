@@ -127,6 +127,18 @@ bool process::start(const char *const exec_args[], bool inherit_fd,
 
   // close all fds except stdin/out/err
   if (!inherit_fd) {
+    // char filename[256];
+    // snprintf(filename, 256, "/tmp/%d-%s.log", getpid(), exec_args[0]);
+
+    // int fd = -1;
+    // if ((fd = open(filename, O_CREAT | O_WRONLY, 0666)) != -1) {
+    //   dup2(fd, STDOUT_FILENO);
+    //   dup2(fd, STDERR_FILENO);
+    //   if (fd > STDERR_FILENO) close(fd);
+    // } else {
+    //   LOG(ERROR, "Failed to create the file: %s, %s", filename, strerror(errno));
+    // }
+
     int fd = -1;
     if ((fd = open("/dev/null", O_RDWR, 0)) != -1) {
       dup2(fd, STDIN_FILENO);

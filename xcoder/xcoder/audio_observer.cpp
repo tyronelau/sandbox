@@ -18,7 +18,7 @@ audio_observer::audio_observer(base::event_queue<frame_ptr_t> *frame_queue) {
 bool audio_observer::onRecordAudioFrame(AudioFrame &frame) {
   (void)frame;
 
-  assert(false);
+  // assert(false);
 
   // This function will not be called for receiving-only mode.
   return true;
