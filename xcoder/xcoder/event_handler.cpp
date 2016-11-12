@@ -178,10 +178,11 @@ atomic_bool_t event_handler::s_term_sig_;
 
 event_handler::event_handler(uint32_t uid, const string &vendor_key,
     const string &channel_name, bool dual, int read_fd, int write_fd,
-    bool audio_decode, bool video_decode, int idle) : uid_(uid),
-    vendor_key_(vendor_key), channel_name_(channel_name), is_dual_(dual),
+    bool audio_decode, bool video_decode, int idle, int min_port,
+    int max_port) : uid_(uid), vendor_key_(vendor_key),
+    channel_name_(channel_name), is_dual_(dual),
     audio_decode_(audio_decode), video_decode_(video_decode),
-    frames_(&loop_, this, 128) {
+    min_port_(min_port), max_port_(max_port), frames_(&loop_, this, 128) {
   idle_ = idle;
   applite_ = NULL;
   joined_ = false;
@@ -277,6 +278,15 @@ int event_handler::run() {
 
   applite_->initializeEx(context);
   applite_->setLogCallback(true);
+
+  if (min_port_ > 0 && max_port_ > 0) {
+    char buf[128];
+    snprintf(buf, 128, "{\"rtc.udp_port_range\":[%d,%d]}", min_port_,
+        max_port_ - 1);
+
+    applite_->setParameters(buf);
+  }
+
   applite_->setChannelProfile(rtc::CHANNEL_PROFILE_LIVE_BROADCASTING);
 
   applite_->setProfile("{\"audioEngine\":{\"useAudioExternalDevice\":true}}", true);

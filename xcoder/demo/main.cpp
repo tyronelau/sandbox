@@ -75,7 +75,7 @@ bool AgoraRecorder::CreateChannel(const string &key, const string &name,
     return false;
 
   return 0 == recorder_->JoinChannel(key.c_str(), name.c_str(), false,
-      uid, decode_audio, decode_video);
+      uid, decode_audio, decode_video, NULL, 300, 40000, 40003);
 }
 
 bool AgoraRecorder::LeaveChannel() {
@@ -170,7 +170,10 @@ int main(int argc, char * const argv[]) {
       uid, key.c_str(), name.c_str());
 
   AgoraRecorder recorder;
-  recorder.CreateChannel(key, name, uid, decode_audio, decode_video);
+  if (!recorder.CreateChannel(key, name, uid, decode_audio, decode_video)) {
+    cerr << "Failed to create agora channel: " << name << endl;
+    return -1;
+  }
 
   while (!recorder.Stopped() && !s_stop_flag) {
     sleep(1);

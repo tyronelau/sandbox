@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <csignal>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #include "base/async_pipe.h"
@@ -114,20 +115,32 @@ void RecorderImpl::error_callback(int err, void *context) {
   pkr << detail;
   pkr.pack();
 
-
   // takes rvalue away
   std::vector<char> buffer = pkr.take_buffer();
   if (write(info->write_fd, &buffer[0], buffer.size()) < 0) {
     LOG(ERROR, "Failed to write error packet! %d, %m", info->write_fd);
   }
-
-  LOG(INFO, "CONTINUE ...%d", static_cast<int>(buffer.size()));
-  sleep(100);
 }
 
 int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
     bool is_dual, uint_t uid, bool decode_audio, bool decode_video,
-    const char *path_prefix, int idle) {
+    const char *path_prefix, int idle, int udp_port_low, int udp_port_high) {
+  if (udp_port_low < 0 || udp_port_high < 0 ||
+      udp_port_low > std::numeric_limits<unsigned short>::max() ||
+      udp_port_high > std::numeric_limits<unsigned short>::max()) {
+    SAFE_LOG(ERROR) << "Invalid port range! [" << udp_port_low << ", "
+        << udp_port_high << ")";
+    return kInvalidArgument;
+  }
+
+  if (udp_port_low > 0 && udp_port_high > 0) {
+    if (udp_port_high - udp_port_low < 3) {
+      SAFE_LOG(ERROR) << "Udp port range should contain at least 3 ports: ["
+          << udp_port_low << ", " << udp_port_high << ")";
+      return kInvalidArgument;
+    }
+  }
+
   int reader_fds[2];
   if (pipe(reader_fds) != 0) {
     SAFE_LOG(ERROR) << "Failed to create a pipe for read: "
@@ -190,6 +203,18 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
 
   args.push_back("--idle");
   args.push_back(idle_str);
+
+  char min_str[16];
+  snprintf(min_str, 16, "%d", udp_port_low);
+
+  char max_str[16];
+  snprintf(max_str, 16, "%d", udp_port_high);
+
+  args.push_back("--min_port");
+  args.push_back(min_str);
+
+  args.push_back("--max_port");
+  args.push_back(max_str);
 
   args.push_back(NULL);
 
@@ -330,7 +355,10 @@ bool RecorderImpl::on_error(async_pipe_reader *reader, int events) {
   assert(reader == reader_);
 
   if (callback_) {
-    callback_->RecorderError(-2, "Broken reading pipe");
+    char detail[64];
+    snprintf(detail, 64, "Broken reading pipe! %d", events);
+
+    callback_->RecorderError(-2, detail);
   }
   return true;
 }

@@ -11,6 +11,7 @@
 #include <string>
 
 #include "base/log.h"
+#include "base/safe_log.h"
 #include "base/opt_parser.h"
 
 #include "xcoder/event_handler.h"
@@ -20,7 +21,13 @@ using namespace agora;
 using namespace agora::base;
 using namespace agora::xcodec;
 
+void exit_core() {
+  assert(false);
+}
+
 int main(int argc, char *argv[]) {
+  atexit(exit_core);
+
   uint32_t uid = 0;
   string key;
   string name;
@@ -30,6 +37,8 @@ int main(int argc, char *argv[]) {
   int read_fd = -1;
   int write_fd = -1;
   int idle = 30000;
+  int min_port = 0;
+  int max_port = 0;
 
   LOG(INFO, "video recorder, based on version " GIT_DESC);
 
@@ -43,6 +52,8 @@ int main(int argc, char *argv[]) {
   parser.add_long_opt("decode_audio", &audio_decode);
   parser.add_long_opt("decode_video", &video_decode);
   parser.add_long_opt("idle", &idle);
+  parser.add_long_opt("min_port", &min_port);
+  parser.add_long_opt("max_port", &max_port);
 
   if (!parser.parse_opts(argc, argv) || key.empty() || name.empty()) {
     std::ostringstream sout;
@@ -62,11 +73,27 @@ int main(int argc, char *argv[]) {
     idle = 10;
   }
 
+  if (min_port < 0 || max_port < 0 ||
+      min_port > std::numeric_limits<unsigned short>::max() ||
+      max_port > std::numeric_limits<unsigned short>::max()) {
+    SAFE_LOG(ERROR) << "Invalid port range [" << min_port << ", "
+        << max_port << ")";
+    return -2;
+  }
+
+  if (min_port > 0 && max_port > 0) {
+    if (max_port - min_port < 3) {
+      SAFE_LOG(ERROR) << "Udp port range should contain at least 3 ports: ["
+          << min_port << ", " << max_port << ")";
+      return -3;
+    }
+  }
+
   LOG(INFO, "uid %" PRIu32 " from vendor %s is joining channel %s",
       uid, key.c_str(), name.c_str());
 
   event_handler handler(uid, key, name, dual, read_fd, write_fd,
-      audio_decode, video_decode, idle);
+      audio_decode, video_decode, idle, min_port, max_port);
 
   return handler.run();
 }

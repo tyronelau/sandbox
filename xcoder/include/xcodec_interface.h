@@ -11,6 +11,7 @@ typedef unsigned int uint_t;
 enum ErrorCode {
   kJoinOK = 0,
   kJoinFailed = 1,
+  kInvalidArgument = 2,
 };
 
 enum AudioFrameType {
@@ -119,9 +120,17 @@ struct Recorder {
   // |idle|: If the channel has no broadcasters over |idle| seconds,
   // the xcoder will automatically quit, and you will receive a
   // |RecorderError| callback.
+  //
+  // If |udp_port_low|, |udp_port_high| are both given positive numbers,
+  // all udp ports used in agora xcoding services are allocated from
+  // [udp_port_low, udp_port_high).
+  // NOTE:
+  // The range [udp_port_low, udp_port_high) should contain AT LEAST 3
+  // available ports.
   virtual int JoinChannel(const char *app_id, const char *channel_name,
       bool is_dual=false, uint_t uid=0, bool decode_audio=false,
-      bool decode_video=false, const char *path_prefix=NULL, int idle=300) = 0;
+      bool decode_video=false, const char *path_prefix=NULL, int idle=300,
+      int udp_port_low=0, int udp_port_high=0) = 0;
 
   virtual int LeaveChannel() = 0;
 

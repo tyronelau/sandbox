@@ -37,7 +37,8 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
       const std::string &channel_name,
       bool is_dual, int read_fd,
       int write_fd, bool audio_decode,
-      bool video_decode, int idle);
+      bool video_decode, int idle,
+      int min_port, int max_port);
 
   ~event_handler();
 
@@ -101,6 +102,8 @@ class event_handler : private rtc::IRtcEngineEventHandlerEx,
   const bool is_dual_;
   const bool audio_decode_;
   const bool video_decode_;
+  const int min_port_;
+  const int max_port_;
 
   atomic_bool_t joined_;
   int32_t last_active_ts_;
