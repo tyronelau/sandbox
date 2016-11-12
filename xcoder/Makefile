@@ -2,13 +2,13 @@
 
 VERSION = 1.6
 
-CC            = gcc
-CXX           = g++
-LINK  = g++
+#CC            = gcc
+#CXX           = g++
+#LINK  = g++
 
-#CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
-#CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
-#LINK = /opt/rh/devtoolset-2/root/usr/bin/g++
+CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
+CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
+LINK = /opt/rh/devtoolset-2/root/usr/bin/g++
 
 RELEASE_CFLAGS  = -pipe -O3 -fPIC -Wall -W -DNEDBUG=1 -g -fvisibility=hidden \
     -Wconversion
@@ -155,7 +155,7 @@ $(RLS_DEMO_TARGET): $(RLS_STUB_TARGET) $(RLS_BASE_TARGET) $(RLS_DEMO_OBJECTS)
 $(RLS_TEST_TARGET): $(RLS_STUB_TARGET) $(RLS_BASE_TARGET) $(RLS_TEST_OBJECTS)
 	@mkdir -p $(dir $@)
 	$(LINK) $(LDFLAGS) -o "$@" $(RLS_TEST_OBJECTS) \
-		-Llibs -L$(RLS_BIN_PATH) -lstub -lbase -pthread -lpthread -lasan
+		-Llibs -L$(RLS_BIN_PATH) -lstub -lbase -pthread -lpthread
 
 $(RLS_STUB_TARGET): $(RLS_STUB_OBJECTS)
 	@mkdir -p $(dir $@)
