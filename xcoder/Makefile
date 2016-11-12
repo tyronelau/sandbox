@@ -3,24 +3,29 @@
 VERSION = 1.6
 
 CC            = gcc
-#CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
 CXX           = g++
+LINK  = g++
+
+#CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
 #CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
+#LINK = /opt/rh/devtoolset-2/root/usr/bin/g++
 
-RELEASE_CFLAGS        = -pipe -O3 -fPIC -Wall -W -DNEDBUG=1 -g -fvisibility=hidden -Wconversion
-RELEASE_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -DNDEBUG=1 -Wconversion \
-												-DGIT_DESC=\"`git rev-parse HEAD`\" -O3 \
-												-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden
+RELEASE_CFLAGS  = -pipe -O3 -fPIC -Wall -W -DNEDBUG=1 -g -fvisibility=hidden \
+    -Wconversion
 
-DEBUG_CFLAGS        = -pipe -O0 -Wall -W -fPIC -g -fvisibility=hidden -Wconversion -fsanitize=address #-Wconversion
-DEBUG_CXXFLAGS      = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer -Wconversion \
-											-DGIT_DESC=\"`git rev-parse HEAD`\" -O0 \
-											-Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden -fsanitize=address
+RELEASE_CXXFLAGS  = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer \
+    -DNDEBUG=1 -Wconversion -DGIT_DESC=\"`git rev-parse HEAD`\" -O3 \
+    -Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden
+
+DEBUG_CFLAGS = -pipe -O0 -Wall -W -fPIC -g -fno-omit-frame-pointer \
+    -fvisibility=hidden -Wconversion -fsanitize=address
+
+DEBUG_CXXFLAGS  = -pipe -std=c++0x -fPIC -g -fno-omit-frame-pointer \
+    -Wconversion -DGIT_DESC=\"`git rev-parse HEAD`\" -O0 \
+    -Wall -W  $(SDK_FLAGS) $(DEFINES) -fvisibility=hidden -fsanitize=address
 
 INCPATH       =  -Iinternal -I.
-#LINK          = /opt/rh/devtoolset-2/root/usr/bin/g++
-LINK  = g++
-LDFLAGS        = -static-libgcc -static-libstdc++  # -Wl,-Bstatic,-lc -Wl,-Bstatic,-lm -Wl,-Bdynamic
+LDFLAGS        = -static-libgcc -static-libstdc++
 
 DEBUG_LINK_LIBS = -levent -levent_thread -lasan 
 
@@ -136,8 +141,8 @@ $(RLS_BASE_TARGET): $(RLS_BASE_OBJECTS)
 $(RLS_XCODER_TARGET): $(RLS_XCODER_OBJECTS) $(RLS_BASE_TARGET) \
 		libs/libmediasdk.a libs/libRtcEngine.a
 	@mkdir -p $(dir $@)
-	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) \
-		-Llibs -L$(RLS_BIN_PATH) -lbase -lmediasdk -lRtcEngine -pthread -lpthread -ldl -lrt
+	$(LINK) $(LDFLAGS) -o "$@" $(RLS_XCODER_OBJECTS) -Llibs -L$(RLS_BIN_PATH) \
+		-lbase -lmediasdk -lRtcEngine -pthread -lpthread -ldl -lrt
 	objcopy --only-keep-debug $(RLS_XCODER_TARGET) $(RLS_XCODER_TARGET).sym
 	objcopy --strip-debug $(RLS_XCODER_TARGET)
 	objcopy --add-gnu-debuglink=$(RLS_XCODER_TARGET).sym $(RLS_XCODER_TARGET)
@@ -156,9 +161,11 @@ $(RLS_STUB_TARGET): $(RLS_STUB_OBJECTS)
 	@mkdir -p $(dir $@)
 	ar cqs "$@" $^
 
-debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET) $(DBG_STUB_TARGET) $(DBG_DEMO_TARGET) $(DBG_TEST_TARGET)
+debug: $(DBG_BASE_TARGET) $(DBG_XCODER_TARGET) $(DBG_STUB_TARGET) \
+	$(DBG_DEMO_TARGET) $(DBG_TEST_TARGET)
 
-release: $(RLS_BASE_TARGET) $(RLS_XCODER_TARGET) $(RLS_STUB_TARGET) $(RLS_DEMO_TARGET) $(RLS_TEST_TARGET)
+release: $(RLS_BASE_TARGET) $(RLS_XCODER_TARGET) $(RLS_STUB_TARGET) \
+	$(RLS_DEMO_TARGET) $(RLS_TEST_TARGET)
 
 pre:
 	@mkdir -p $(DBG_OBJ_PATH)

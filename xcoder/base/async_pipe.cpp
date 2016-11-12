@@ -24,18 +24,6 @@ async_pipe_reader::async_pipe_reader(event_loop *loop, int fd,
   fcntl(pipe_fd_, F_SETFL, flags | O_NONBLOCK);
 
   fp_ = new buffered_pipe(pipe_fd_, kRead);
-  // if ((fp_ = fdopen(pipe_fd_, "rb")) == NULL) {
-  //   SAFE_LOG(FATAL) << "Failed to open the pipe to read: " << strerror(errno);
-  //   return;
-  // }
-
-  // char file_str[256];
-  // snprintf(file_str, 256, "%d_%d_r.dat", getpid(), fd);
-
-  // if ((raw_ = fopen(file_str, "wb")) == NULL) {
-  //   SAFE_LOG(FATAL) << "Failed to open the pipe to write: " << strerror(errno);
-  //   return;
-  // }
 
   readed_ = 0;
   buffer_ = NULL;
@@ -50,7 +38,6 @@ async_pipe_reader::~async_pipe_reader() {
   remove_callback();
 
   if (fp_) {
-    // fclose(fp_);
     delete fp_;
   }
 }
@@ -104,18 +91,9 @@ void async_pipe_reader::on_read() {
     if (buffer_ == NULL) {
       packet_size_ = 0;
       // Read next packet
-      // if (fread(&packet_size_, sizeof(packet_size_), 1, fp_) != 1) {
-      //   clearerr(fp_);
-      //   break;
-      // }
-
       if (fp_->read_buffer(&packet_size_, sizeof(packet_size_), 1) != 1) {
-        // clearerr(fp_);
         break;
       }
-
-      // while (fwrite(&packet_size_, sizeof(packet_size_), 1, raw_) != 1) {
-      // }
 
       if (packet_size_ <= 6 || packet_size_ > 64 * 1024 * 104) {
         SAFE_LOG(ERROR) << "Illegal packet size: " << packet_size_;
@@ -126,11 +104,9 @@ void async_pipe_reader::on_read() {
       }
 
       buffer_ = new (std::nothrow)char[packet_size_];
-      // SAFE_LOG(INFO) << "Readed: " << packet_size_ << "buffer: " << (void*)buffer_;
 
       uint32_t *p = reinterpret_cast<uint32_t *>(buffer_);
       *p = packet_size_;
-
       readed_ = sizeof(packet_size_);
     }
 
@@ -138,23 +114,9 @@ void async_pipe_reader::on_read() {
     size_t toread = packet_size_ - readed_;
     size_t readed = 0;
     if ((readed = fp_->read_buffer(next, 1, toread)) != toread) {
-      // clearerr(fp_);
-
-      // while (fwrite(next, readed, 1, raw_) != 1) {
-      // }
-      // SAFE_LOG(INFO) << "packet : " << (void*)buffer_ << ", p: " << (void*)next
-      //   << ", packet size: " << packet_size_ << ", toread: " << toread
-      //   << ", read: " << readed;
       readed_ = static_cast<uint32_t>(readed_ + readed);
       break;
     }
-
-      // while (fwrite(next, readed, 1, raw_) != 1) {
-      // }
-
-      // SAFE_LOG(INFO) << "packet : " << (void*)buffer_ << ", p: " << (void*)next
-      //   << ", packet size: " << packet_size_ << ", toread: " << toread
-      //   << ", read: " << readed;
 
     if (listener_) {
       unpacker unpkr(buffer_, packet_size_, false);
@@ -175,10 +137,6 @@ void async_pipe_reader::on_read() {
   }
 
   processing_ = false;
-
-  // if (feof(fp_) && listener_) {
-  //   listener_->on_error(this, 0x2000);
-  // }
 }
 
 void async_pipe_reader::on_error(int events) {
@@ -201,19 +159,6 @@ async_pipe_writer::async_pipe_writer(event_loop *loop, int fd,
 
   fp_ = new buffered_pipe(pipe_fd_, kWrite);
 
-  // if ((fp_ = fdopen(pipe_fd_, "wb")) == NULL) {
-  //   SAFE_LOG(FATAL) << "Failed to open the pipe to write: " << strerror(errno);
-  //   return;
-  // }
-
-  // char file_str[256];
-  // snprintf(file_str, 256, "%d_%d_w.dat", getpid(), fd);
-
-  // if ((raw_ = fopen(file_str, "wb")) == NULL) {
-  //   SAFE_LOG(FATAL) << "Failed to open the pipe to write: " << strerror(errno);
-  //   return;
-  // }
-
   written_ = 0;
   listener_ = listener;
 
@@ -226,7 +171,6 @@ async_pipe_writer::async_pipe_writer(event_loop *loop, int fd,
 async_pipe_writer::~async_pipe_writer() {
   if (fp_) {
     delete fp_;
-    // fclose(fp_);
   }
 
   remove_callback();
@@ -252,7 +196,6 @@ bool async_pipe_writer::write_packet(const packet &p) {
 
   // takes rvalue away
   std::vector<char> buffer = pkr.take_buffer();
-  // SAFE_LOG(INFO) << "packet size: " << buffer.size() << ", header: " << *reinterpret_cast<uint32_t *>(&buffer[0]);
 
   if (writable_) {
     // Send it immediately
@@ -260,14 +203,7 @@ bool async_pipe_writer::write_packet(const packet &p) {
     assert(buffer_.empty());
 
     buffer_.swap(buffer);
-    // written_ = fwrite(&buffer_[0], 1, buffer_.size(), fp_);
     written_ = fp_->write_buffer(&buffer_[0], buffer_.size());
-        
-    // SAFE_LOG(INFO) << "packet size: " << buffer_.size() << ", header: " << *reinterpret_cast<uint32_t*>(&buffer_[0]);
-    // SAFE_LOG(INFO)  << "write: " << (void*)(&buffer_[0]) << ", towrite: " << buffer_.size() << ", written: " << written_;
-
-    // while (fwrite(&buffer_[0], written_, 1, raw_) != 1) {
-    // }
 
     if (written_ < buffer_.size()) {
       writable_ = false;
@@ -275,7 +211,6 @@ bool async_pipe_writer::write_packet(const packet &p) {
         listener_->on_error(this, 0x4000);
         return false;
       }
-      // clearerr(fp_);
       enable_write_callback();
       return false;
     }
@@ -284,11 +219,8 @@ bool async_pipe_writer::write_packet(const packet &p) {
     buffer_.clear();
 
     fp_->flush();
-    // fflush(fp_);
     return true;
   }
-
-  // static const size_t kMaxPendingSize = 10 * 1024 * 1024;
 
   SAFE_LOG(INFO) << "Pending: " << pending_packets_.size();
   pending_packets_.push(std::move(buffer));
@@ -302,22 +234,12 @@ bool async_pipe_writer::on_write() {
     if (!buffer_.empty() && written_ < buffer_.size()) {
       size_t towrite = buffer_.size() - written_;
       const char *p = &buffer_[0] + written_;
-      // size_t n = fwrite(p, 1, towrite, fp_);
       size_t n = fp_->write_buffer(p, towrite);
-    //   if (written_ == 0) {
-    //     SAFE_LOG(INFO) << "packet size: " << buffer_.size() << ", header: " << *reinterpret_cast<const uint32_t*>(p);
-    //   }
 
-    // fwrite(p, 1, n, raw_);
-    // while (fwrite(p, n, 1, raw_) != 1) {
-    // }
-
-    // SAFE_LOG(INFO) << "packet: " << (void*)&buffer_[0] << ", write: " << (void*)p << ", towrite: " << towrite << ", written: " << n;
       written_ += n;
 
       if (n < towrite) {
         writable_ = false;
-        // clearerr(fp_);
         break;
       }
     }
@@ -342,7 +264,6 @@ bool async_pipe_writer::on_write() {
   }
 
   fp_->flush();
-  // fflush(fp_);
   return true;
 }
 
