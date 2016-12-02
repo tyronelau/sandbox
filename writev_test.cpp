@@ -37,12 +37,6 @@ int run_client(const ipv4 &remote, uint16_t port) {
   addr.sin_addr.s_addr = remote.ip;
 
   int skt = socket(AF_INET, SOCK_STREAM, 0);
-  if (::connect(skt, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) < 0) {
-    in_addr t;
-    t.s_addr = remote.ip;
-    cerr << "failed to connect to " << inet_ntoa(t) << ": " << port << endl;
-    goto cleanup;
-  }
 
   struct timeval t;
   t.tv_sec = 10;
@@ -55,6 +49,15 @@ int run_client(const ipv4 &remote, uint16_t port) {
 
   if (-1 == setsockopt(skt, SOL_SOCKET, SO_RCVTIMEO, &t, sizeof(t))) {
     cerr << "Failed to set socket recv time out " << skt  << endl;
+    goto cleanup;
+  }
+
+  cerr << now_ms() << ", Ready to connect: " << endl;
+
+  if (::connect(skt, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) < 0) {
+    in_addr t;
+    t.s_addr = remote.ip;
+    cerr << now_ms() << ", Failed to connect to " << inet_ntoa(t) << ": " << port << endl;
     goto cleanup;
   }
 
