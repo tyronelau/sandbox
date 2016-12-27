@@ -2,3 +2,6 @@
   Support user-defined port allocator
   interface headers & demo both are updated
 
+2016/12/27:
+  Fix bugs in video decoding modules
+
