@@ -5,7 +5,7 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
-    cout << "Usage: " << argv[0] << " ip port" << endl;
+    cout << "Usage: " << argv[0] << " ip port" << std::endl;
     return -1;
   }
   
