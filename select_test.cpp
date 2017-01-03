@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   void *p = malloc(120);
   void *q = realloc(p, 200);
   void *r = realloc(q, 50);
-  void *ss = realloc(r, 0);
+  void *ss = realloc(r, 100);
 
   posix_memalign(&p, 4096, 4096);
   memalign(4096, 8192);
