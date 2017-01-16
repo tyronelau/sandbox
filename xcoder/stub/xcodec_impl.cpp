@@ -419,6 +419,7 @@ void RecorderImpl::on_video_frame(protocol::yuv_frame frame) {
     xcodec::VideoFrame frm;
     frm.type = xcodec::kRawYuv;
     frm.frame.yuv = &t;
+    frm.rotation = 0;
 
     callback_->VideoFrameReceived(frame.uid, &frm);
   }
@@ -434,6 +435,46 @@ void RecorderImpl::on_video_frame(protocol::h264_frame frame) {
     xcodec::VideoFrame frm;
     frm.type = xcodec::kH264;
     frm.frame.h264 = &t;
+    frm.rotation = 0;
+
+    callback_->VideoFrameReceived(frame.uid, &frm);
+  }
+}
+
+void RecorderImpl::on_video_frame(protocol::yuv_frame2 frame) {
+  xcodec::VideoYuvFrame t(frame.frame_ms, frame.width, frame.height,
+      frame.ystride, frame.ustride, frame.vstride);
+
+  t.data_ = std::move(frame.data);
+  t.ybuf_ = reinterpret_cast<uchar_t *>(&t.data_[0]);
+
+  size_t offset = t.height_ * t.ystride_;
+  t.ubuf_ = reinterpret_cast<uchar_t *>(&t.data_[offset]);
+
+  offset += t.height_ * t.ustride_ / 2;
+  t.vbuf_ = reinterpret_cast<uchar_t *>(&t.data_[offset]);
+
+  if (callback_) {
+    xcodec::VideoFrame frm;
+    frm.type = xcodec::kRawYuv;
+    frm.frame.yuv = &t;
+    frm.rotation = frame.rotation;
+
+    callback_->VideoFrameReceived(frame.uid, &frm);
+  }
+}
+
+void RecorderImpl::on_video_frame(protocol::h264_frame2 frame) {
+  xcodec::VideoH264Frame t;
+  t.frame_ms = frame.frame_ms;
+  t.frame_num = frame.frame_num;
+  t.payload = std::move(frame.data);
+
+  if (callback_) {
+    xcodec::VideoFrame frm;
+    frm.type = xcodec::kH264;
+    frm.frame.h264 = &t;
+    frm.rotation = frame.rotation;
 
     callback_->VideoFrameReceived(frame.uid, &frm);
   }

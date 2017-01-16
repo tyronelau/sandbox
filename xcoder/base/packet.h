@@ -142,11 +142,11 @@ inline unpacker& operator >>(unpacker &p, packet &x) {
       , name4() \
       , name5() \
     {} \
-    virtual void unmarshall(unpacker& p) { \
+    virtual void unmarshall(agora::base::unpacker& p) { \
       packet::unmarshall(p); \
       p >> name1 >> name2 >> name3 >> name4 >> name5; \
     } \
-    virtual void marshall(packer& p) const { \
+    virtual void marshall(agora::base::packer& p) const { \
       packet::marshall(p); \
       p << name1 << name2 << name3 << name4 << name5; \
     } \

@@ -61,6 +61,8 @@ class RecorderImpl : public Recorder, private base::pipe_read_listener,
 
   void on_video_frame(protocol::yuv_frame frame);
   void on_video_frame(protocol::h264_frame frame);
+  void on_video_frame(protocol::yuv_frame2 frame);
+  void on_video_frame(protocol::h264_frame2 frame);
 
   void on_recorder_error(int32_t error_code, const std::string &reason);
  private:

@@ -93,6 +93,8 @@ struct VideoFrame {
     VideoYuvFrame *yuv;
     VideoH264Frame *h264;
   } frame;
+
+  int rotation; // 0, 90, 180, 270
 };
 
 struct RecorderCallback {

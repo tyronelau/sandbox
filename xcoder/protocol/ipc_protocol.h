@@ -18,6 +18,8 @@ enum message_uri {
   RECORDER_ERROR_URI = 6,
   H264_FRAME_URI = 7,
   AAC_FRAME_URI = 8,
+  YUV_FRAME2_URI = 9,
+  H264_FRAME2_URI = 10,
 };
 
 DECLARE_PACKET_1(leave_packet, LEAVE_URI, int32_t, reason);
@@ -41,6 +43,15 @@ DECLARE_PACKET_4(h264_frame, H264_FRAME_URI, uint32_t, uid, uint32_t,
 
 DECLARE_PACKET_2(recorder_error, RECORDER_ERROR_URI, int32_t, error_code,
   std::string, reason);
+
+DECLARE_PACKET_9(yuv_frame2, YUV_FRAME2_URI, uint16_t, rotation,
+    uint32_t, uid, uint32_t, frame_ms, uint16_t, width,
+    uint16_t, height, uint16_t, ystride, uint16_t, ustride,
+    uint16_t, vstride, std::string, data);
+
+DECLARE_PACKET_5(h264_frame2, H264_FRAME2_URI, uint16_t, rotation,
+    uint32_t, uid, uint32_t, frame_ms, uint32_t, frame_num,
+    std::string, data);
 
 // struct audio_frame : base::packet {
 //   uint32_t uid;

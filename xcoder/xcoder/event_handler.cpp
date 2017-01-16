@@ -122,7 +122,8 @@ int peer_stream::onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
   if (!queue_ || decode_)
     return 0;
 
-  protocol::h264_frame *f = new protocol::h264_frame;
+  protocol::h264_frame2 *f = new protocol::h264_frame2;
+  f->rotation = 0;
   f->uid = uid_;
   f->frame_ms = video_ts;
   f->frame_num = frame_num;

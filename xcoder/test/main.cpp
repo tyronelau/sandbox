@@ -153,6 +153,7 @@ int event_reader::run() {
 bool event_reader::on_receive_packet(async_pipe_reader *reader, unpacker &pkr,
     uint16_t uri) {
   (void)reader;
+  (void)uri;
 
   assert(uri = PROMPT_URI);
   prompt pkt;
