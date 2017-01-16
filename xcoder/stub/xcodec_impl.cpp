@@ -324,6 +324,18 @@ bool RecorderImpl::on_receive_packet(async_pipe_reader *reader,
     on_video_frame(std::move(frame));
     break;
   }
+  case protocol::YUV_FRAME2_URI: {
+    protocol::yuv_frame2 frame;
+    frame.unmarshall(pkr);
+    on_video_frame(std::move(frame));
+    break;
+  }
+  case protocol::H264_FRAME2_URI: {
+    protocol::h264_frame2 frame;
+    frame.unmarshall(pkr);
+    on_video_frame(std::move(frame));
+    break;
+  }
   case protocol::USER_JOINED_URI: {
     protocol::user_joined joined;
     joined.unmarshall(pkr);
