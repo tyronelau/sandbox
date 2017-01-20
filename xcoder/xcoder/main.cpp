@@ -21,12 +21,12 @@ using namespace agora;
 using namespace agora::base;
 using namespace agora::xcodec;
 
-void exit_core() {
-  assert(false);
-}
+// void exit_core() {
+//   assert(false);
+// }
 
 int main(int argc, char *argv[]) {
-  atexit(exit_core);
+  // atexit(exit_core);
 
   uint32_t uid = 0;
   string key;

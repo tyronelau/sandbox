@@ -360,6 +360,11 @@ void event_handler::onError(int rescode, const char *msg) {
       LOG(INFO, "Error in mediasdk: %d, %s", rescode, msg);
       break;
   }
+
+  protocol::recorder_error *error = new protocol::recorder_error;
+  error->error_code = rescode;
+  error->reason = "Error occured in media SDK";
+  frames_.push(frame_ptr_t(error));
 }
 
 void event_handler::onJoinChannelSuccess(const char *channel, uid_t uid,
