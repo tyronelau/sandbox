@@ -382,7 +382,10 @@ bool RecorderImpl::on_error(async_pipe_writer *writer, int events) {
   assert(writer == writer_);
 
   if (callback_) {
-    callback_->RecorderError(-1, "Broken writing pipe");
+    char detail[64];
+    snprintf(detail, 64, "Broken writing pipe! %d", events);
+
+    callback_->RecorderError(-1, detail);
   }
   return true;
 }

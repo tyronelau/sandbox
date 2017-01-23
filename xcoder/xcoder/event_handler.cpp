@@ -484,6 +484,10 @@ bool event_handler::on_error(base::async_pipe_writer *writer, int events) {
 
 void event_handler::on_event(frame_ptr_t frame) {
   if (writer_) {
+    if (frame->uri_ == protocol::RECORDER_ERROR_URI) {
+      s_term_sig_.store(true);
+    }
+
     writer_->write_packet(*frame.get());
   }
 }
