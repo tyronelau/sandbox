@@ -8,3 +8,5 @@
 2017/01/16:
   Add a rotation field into VideoFrame
 
+2017/02/27:
+  Add error reports for SDK users
