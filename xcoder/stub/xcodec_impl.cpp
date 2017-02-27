@@ -104,6 +104,8 @@ struct error_info {
 // this function get called in another process.
 // be careful!
 void RecorderImpl::error_callback(int err, void *context) {
+  SAFE_LOG(INFO) << "Failed to invoke the process " << err;
+
   error_info *info = reinterpret_cast<error_info *>(context);
   const char *err_str = strerror(err);
 
@@ -218,13 +220,13 @@ int RecorderImpl::JoinChannel(const char *vendor_key, const char *cname,
 
   args.push_back(NULL);
 
-  // error_info info;
-  // info.write_fd = reader_fds[1];
-  // info.error = 0;
+  error_info info;
+  info.write_fd = reader_fds[1];
+  info.error = 0;
 
   base::process p;
   int skipped[2] = {writer_fds[0], reader_fds[1]};
-  if (!p.start(&args[0], false, skipped, 2, NULL, NULL)) {
+  if (!p.start(&args[0], false, skipped, 2, error_callback, &info)) {
     close(reader_fds[0]);
     close(reader_fds[1]);
     close(writer_fds[0]);

@@ -176,12 +176,15 @@ bool process::start(const char *const exec_args[], bool inherit_fd,
   }
 
   execvp(const_cast<char*>(exec_args[0]), const_cast<char *const *>(&exec_args[0]));
-  LOG(FATAL, "Failed to call execvp(%s): %s", exec_args[0], strerror(errno));
+  int err_code = errno;
 
-  // if (error) {
-  //   (*error)(errno, context);
-  // }
+  LOG(FATAL, "Failed to call execvp(%s): %s", exec_args[0], strerror(err_code));
 
+  if (error) {
+    (*error)(err_code, context);
+  }
+
+  usleep(100 * 1000);
   _Exit(-100);
   return false; // never goes here.
 }
