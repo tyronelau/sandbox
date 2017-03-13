@@ -15,8 +15,11 @@ namespace AgoraRTC {
   // Callback class used for recording/playback video file
   class VCMVideoFileCallback {
   public:
-    virtual int onDecodeVideo(unsigned int video_ts, unsigned char payload_type, unsigned char* buffer, unsigned int length, unsigned int frame_num) = 0;
+    virtual int onDecodeVideo(unsigned int video_ts, unsigned char payload_type, unsigned char* buffer, unsigned int length, unsigned int frame_num, int ipb_type, int sps_pps_handle) = 0;
     virtual int onEncodeVideo(unsigned int video_ts, unsigned char payload_type, unsigned char* buffer, unsigned int length) = 0;
+
+    virtual int onDecodeVideoSEI(const char* info, int len) = 0;
+    //virtual int onEncodeVideoSEI(char** info, int *len) = 0;
   };
 
   // Callback class used for recording/playback audio file
@@ -46,5 +49,6 @@ namespace AgoraRTC {
 }
 
 AGORAVOICE_DLLEXPORT int RegisterICMFileObserver(AgoraRTC::ICMFileObserver* observer);
+AGORAVOICE_DLLEXPORT int Set264SPSPPS(char* spspps, int len);
 
 #endif

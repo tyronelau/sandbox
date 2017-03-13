@@ -25,6 +25,7 @@ public:
     int channels;  //number of channels (data are interleaved if stereo)
     int samplesPerSec;  //sampling rate
     void* buffer;  //data buffer
+    int64_t renderTimeMs;
   };
 public:
   virtual bool onRecordAudioFrame(AudioFrame& audioFrame) = 0;
@@ -49,6 +50,7 @@ public:
     void* uBuffer;  //U data buffer
     void* vBuffer;  //V data buffer
     int rotation; // rotation of this frame (0, 90, 180, 270)
+    int64_t renderTimeMs;
   };
 public:
   virtual bool onCaptureVideoFrame(VideoFrame& videoFrame) = 0;
@@ -147,7 +149,7 @@ class IExternalVideoRender
 public:
   virtual void release() = 0;
   virtual int initialize() = 0;
-	virtual int deliverFrame(const IVideoFrame& videoFrame, int rotation, bool mirrored) = 0;
+  virtual int deliverFrame(const IVideoFrame& videoFrame, int rotation, bool mirrored) = 0;
 };
 
 class IExternalVideoRenderFactory

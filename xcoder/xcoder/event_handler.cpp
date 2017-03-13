@@ -64,8 +64,9 @@ class peer_stream : public AgoraRTC::ICMFile {
   virtual int stopVideoRecord();
   virtual int setVideoRotation(int rotation);
 
-  virtual int onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
-      uint8_t *buffer, uint32_t length, uint32_t frame_num);
+  virtual int onDecodeVideo(unsigned int video_ts, unsigned char payload_type,
+      unsigned char *buffer, uint32_t length, uint32_t frame_num,
+      int ipb_type, int sps_pps_handle);
 
   virtual int onEncodeVideo(uint32_t video_ts, uint8_t payload_type,
       uint8_t *buffer, uint32_t length);
@@ -75,6 +76,8 @@ class peer_stream : public AgoraRTC::ICMFile {
 
   virtual int onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
       uint8_t *buffer, uint32_t length);
+
+  virtual int onDecodeVideoSEI(const char* info, int len);
  private:
   event_queue<frame_ptr_t> *queue_;
   bool decode_;
@@ -114,9 +117,12 @@ int peer_stream::setVideoRotation(int rotation) {
 }
 
 int peer_stream::onDecodeVideo(uint32_t video_ts, uint8_t payload_type,
-    uint8_t *buffer, uint32_t length, uint32_t frame_num) {
+    uint8_t *buffer, uint32_t length, uint32_t frame_num, int ipb_type,
+    int sps_pps_handle) {
   (void)payload_type;
   (void)frame_num;
+  (void)ipb_type;
+  (void)sps_pps_handle;
 
   // if |decode_| is true, we don't want a raw h264 frame.
   if (!queue_ || decode_)
@@ -172,6 +178,13 @@ int peer_stream::onEncodeAudio(uint32_t audio_ts, uint8_t payload_type,
   (void)length;
 
   // assert(false);
+  return -1;
+}
+
+int peer_stream::onDecodeVideoSEI(const char *info, int len) {
+  (void)info;
+  (void)len;
+
   return -1;
 }
 
@@ -290,8 +303,17 @@ int event_handler::run() {
 
   applite_->setChannelProfile(rtc::CHANNEL_PROFILE_LIVE_BROADCASTING);
 
-  applite_->setProfile("{\"audioEngine\":{\"useAudioExternalDevice\":true}}", true);
-  applite_->setProfile("{\"audioEngine\":{\"audioSampleRate\":32000}}", true);
+  int sample_rates = 32000;
+  rtc::RtcEngineParameters parameter(*applite_);
+  parameter.setRecordingAudioFrameParameters(sample_rates, 1, agora::rtc::RAW_AUDIO_FRAME_OP_MODE_WRITE_ONLY, sample_rates/100);
+  parameter.setPlaybackAudioFrameParameters(sample_rates, 1, agora::rtc::RAW_AUDIO_FRAME_OP_MODE_READ_ONLY, sample_rates/100);
+
+  agora::rtc::AParameter param(*applite_);
+  param->setInt("che.audio.server_fs", sample_rates);
+  param->setBool("che.audio.server_mode", true);
+
+  // applite_->setProfile("{\"audioEngine\":{\"useAudioExternalDevice\":true}}", true);
+  // applite_->setProfile("{\"audioEngine\":{\"audioSampleRate\":32000}}", true);
 
   applite_->setClientRole(rtc::CLIENT_ROLE_AUDIENCE, NULL);
 

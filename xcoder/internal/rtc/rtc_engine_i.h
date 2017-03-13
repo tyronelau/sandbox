@@ -7,6 +7,7 @@
 #pragma once
 #include <rtc/IAgoraRtcEngine.h>
 #include <rtc/rtc_event.h>
+
 #include <string>
 
 #if defined(_WIN32)
@@ -17,6 +18,7 @@ extern HINSTANCE GetCurrentModuleInstance();
 
 namespace agora {
   namespace commons {
+      class packer;
     namespace network {
       struct network_info_t;
     }
@@ -70,6 +72,18 @@ public:
         (void)level;
         (void)message;
         (void)length;
+    }
+
+    virtual void onMediaEngineEvent(int evt) {
+        (void)evt;
+    }
+
+    virtual bool onCustomizedSei(const void **content, int *length) {
+      (void)content;
+      (void)length;
+
+      /* return false to indicate the SEI content is left to SDK to generate */
+      return false;
     }
 };
 
@@ -131,6 +145,8 @@ public:
 
     virtual void printLog(LOG_FILTER_TYPE level, const char* message) = 0;
     virtual int setVideoProfileEx(int width, int height, int frameRate, int bitrate) = 0;
+    virtual int postRequest(commons::packer& pk) = 0;
+    virtual int reportArgusCounters(int *counterId, int *value, int count, uid_t uid) = 0;
 };
 
 class RtcEngineParametersEx : public RtcEngineParameters
@@ -280,5 +296,37 @@ private:
 	PFN_GetAgoraRtcEngineVersion m_pfnGetAgoraRtcEngineVersion;
 };
 
+
+// A helper function for decoding out the SEI layout
+
+struct canvas_info {
+  int width;
+  int height;
+  int bgcolor;
+};
+
+struct region_info {
+  unsigned id;
+
+  double x;
+  double y;
+  double width;
+  double height;
+
+  int alpha; // [0, 255]
+
+  int render_mode; // 0, crop; 1, ZoomtoFit
+  int zorder; // [0, 100]
+};
+
+struct layout_info {
+  long long ms;
+  canvas_info canvas;
+  // At most 9 broadcasters: 1 host, 8 guests.
+  unsigned int region_count;
+  region_info regions[9];
+};
+
+bool decode_sei_layout(const void *data, unsigned size, layout_info *layout);
 
 }}

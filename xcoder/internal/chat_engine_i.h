@@ -166,6 +166,8 @@ public:
       int sentLoss;
       int sentTargetBitRate;
       unsigned int encodeTimeMs;
+      unsigned int minEncodeTimeMs;
+      unsigned int maxEncodeTimeMs;
       int captureWidth;
       int captureHeight;
       int captureFrames;
@@ -177,6 +179,8 @@ public:
       int fecLevel;
       int estimateBandwidth;
       unsigned int maxFrameOutInterval;
+      int uplinkFreezeCount;
+      int uplinkFreezeTime;
 
       void reset() {
         highStream.reset();
@@ -185,6 +189,8 @@ public:
         sentLoss = 0;
         sentTargetBitRate = 0;
         encodeTimeMs = 0;
+        minEncodeTimeMs = 0;
+        maxEncodeTimeMs = 0;
         captureWidth = 0;
         captureHeight = 0;
         captureFrames = 0;
@@ -223,6 +229,8 @@ public:
       unsigned int maxFrameNumber;
       unsigned int freezeCnt;
       int freezeTimeMs;
+      bool isHardwareDecoding;
+      int decoderInFrames;
 
       void reset() {
         uid = 0;
@@ -245,6 +253,8 @@ public:
         maxFrameNumber = 0;
         freezeCnt = 0;
         freezeTimeMs = 0;
+        isHardwareDecoding = false;
+        decoderInFrames = 0;
       }
     };
 
@@ -290,11 +300,13 @@ public:
     virtual void onVideoStat(const LocalVideoStat& localStat, RemoteVideoStat* remoteStat, int remoteCount) = 0;
     virtual void switchVideoStream(unsigned int uid, VideoStreamType stream) = 0;
     virtual void onBandWidthLevelChanged(int level) = 0;
-    virtual void onVideoViewSizeChanged(int userID, int newWidth, int newHeight){
+    virtual void onVideoViewSizeChanged(int userID, int newWidth, int newHeight) {
       (void)userID;
       (void)newWidth;
       (void)newHeight;
     }
+
+    virtual int onEncodeVideoSEI(char** info, int *len) = 0;
 };
 
 class IJitterStatistics
@@ -338,7 +350,14 @@ public:
         RECORDING_WARNING = 2,
         PLAYOUT_WARNING = 3,
         // Audio file mixing is done
-        AUDIO_FILE_MIX_FINISH = 10
+        AUDIO_FILE_MIX_FINISH = 10,
+        // Restart is finished caused by url sample rate mismatch
+        SAMPLE_RATE_RESTART_FINISH = 11,
+        // Role change
+        ENGINE_ROLE_BROADCASTER_SOLO = 20,
+        ENGINE_ROLE_BROADCASTER_INTERACTIVE = 21,
+        ENGINE_ROLE_AUDIENCE = 22,
+        ENGINE_ROLE_COMM_PEER = 23
     };
     enum DEVICE_STATE_TYPE {
         DEVICE_STATE_ACTIVE = 1,
@@ -375,7 +394,9 @@ struct ChatEngineEventData {
     int aec_erle;
     int aec_frac;
     int aec_quality;
-    int signal_level;
+    int nearin_signal_level;
+    int nearout_signal_level;
+    int farin_signal_level;
     int howling_state;
     int audio_engine_stat[3];
     int audio_route;
@@ -500,7 +521,7 @@ public:
 
     virtual int setSpeakerStatus(bool enable) = 0;
     virtual int getPlayoutTS(unsigned int uid,int *playoutTS) = 0;
-	  virtual int queryGameSoundStatus(bool& requireSuppression) = 0;
+    virtual int queryGameSoundStatus(bool& requireSuppression) = 0;
 
     // enable/disable volume/level report
     // reportIntervalMs: designates the callback interval in milliseconds, 0 means disable
@@ -660,7 +681,8 @@ public:
     virtual int getCodecInfo(int index, char* pInfoBuffer, int infoBufferLen) = 0;
     virtual int numOfCodecSizes() = 0;
     virtual int getCodecSizeInfo(int index, char* pInfoBuffer, int infoBufferLen) = 0;
-    virtual int setCodec(int index, unsigned short width, unsigned short height) = 0;
+    // remove this API: following 2 APIs can do the same work
+//    virtual int setCodec(int index, unsigned short width, unsigned short height) = 0;
     virtual int setCodec(VideoCodecType type) = 0;
     virtual int setCodecResolution(unsigned short width, unsigned short height) = 0;
 
@@ -693,6 +715,7 @@ public:
     // NOTE(liuyong): for live video only
     virtual int setVideoMinimumPlayout(unsigned int uid, int playoutMs) = 0;
     virtual int setActualSendBitrate(int send_kbps, int retrans_kbps) = 0;
+    virtual int notifyNetworkType(unsigned int uid, int type) = 0;
 };
 
 class IChatEngine
@@ -706,6 +729,7 @@ public:
         MEDIA_ENGINE_ROLE_INTERACTIVE_BROADCASTER = 1,
         MEDIA_ENGINE_ROLE_SOLO_BROADCASTER = 2,
         MEDIA_ENGINE_ROLE_AUDIENCE = 3,
+        MEDIA_ENGINE_ROLE_GAME = 4,
     };
 
     virtual void release() = 0;
@@ -771,7 +795,25 @@ public:
                             int fmt); // fmt: 1: I420
     void *mReceiver;
 };
-AGORAVOICE_DLLEXPORT void registerVideoSource(VideoSource *src);
+class VideoSourceEx : public VideoSource
+{
+public:
+    VideoSourceEx() { mFuncOnFrameToEncode = NULL; }
+    virtual ~VideoSourceEx() {}
+    virtual const char *className() { return "VideoSourceEx"; }
+    // frame observer: return yuv frame to app
+    void (* mFuncOnFrameToEncode)(const void *y,
+                                  const void *u,
+                                  const void *v,
+                                  int ystride,
+                                  int cstride,
+                                  int width,
+                                  int height,
+                                  int rotation,
+                                  long long timestamp);
+};
+AGORAVOICE_DLLEXPORT void registerVideoSource(VideoSource *src); // deprecated
+AGORAVOICE_DLLEXPORT void registerVideoSourceEx(VideoSourceEx *src);
 // Video preprocessor: process yuv frame before encoder
 AGORAVOICE_DLLEXPORT void registerVideoPreProcessor(void *routine, void *param);
 AGORAVOICE_DLLEXPORT int registerVideoFrameObserver(agora::media::IVideoFrameObserver *observer);

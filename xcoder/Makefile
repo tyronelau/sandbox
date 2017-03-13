@@ -2,13 +2,13 @@
 
 VERSION = 1.6
 
-CC            = gcc
-CXX           = g++
-LINK  = g++
+#CC            = gcc
+#CXX           = g++
+#LINK  = g++
 
-#CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
-#CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
-#LINK = /opt/rh/devtoolset-2/root/usr/bin/g++
+CC = /opt/rh/devtoolset-2/root/usr/bin/gcc
+CXX = /opt/rh/devtoolset-2/root/usr/bin/g++
+LINK = /opt/rh/devtoolset-2/root/usr/bin/g++
 
 RELEASE_CFLAGS  = -pipe -O3 -fPIC -Wall -W -DNEDBUG=1 -g -fvisibility=hidden \
     -Wconversion
