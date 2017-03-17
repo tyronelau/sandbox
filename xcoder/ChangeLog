@@ -13,3 +13,6 @@
 
 2017/03/12:
 	Fix crashes on 1.8.2
+
+2017/03/17:
+	Fix time drift in recording
