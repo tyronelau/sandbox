@@ -1042,13 +1042,13 @@ typedef struct malloc_chunk* mchunkptr;
 struct malloc_state;
 typedef struct malloc_state *mstate;
 
-#ifndef __glibc_unlikeley
-#define __glibc_unlikely(cond) (cond)
-#endif
-
-#ifndef __glibc_likeley
-#define __glibc_likely(cond) (cond)
-#endif
+// #ifndef __glibc_unlikeley
+// #define __glibc_unlikely(cond) (cond)
+// #endif
+// 
+// #ifndef __glibc_likeley
+// #define __glibc_likely(cond) (cond)
+// #endif
 
 /* For fatal message */
 /* FIXME(LIUYONG): Fix me */

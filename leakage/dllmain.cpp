@@ -79,26 +79,26 @@ void*  __libc_memalign(size_t, size_t);
 void dll_load(void) {
   // FIXME(liuyong): dlsym will sometimes call |malloc|, but this library
   // is still initializing
-  // static const char buf[] = "on loading from dll_load\n";
-  // write(2, buf, sizeof(buf) - 1);
-  // g_real_malloc = __libc_malloc;
-  // g_real_free = __libc_free;
-  // g_real_calloc = __libc_calloc;
-  // g_real_realloc = __libc_realloc;
-  // g_real_valloc = __libc_valloc;
-  // g_real_memalign = __libc_memalign;
+  static const char buf[] = "on loading from dll_load\n";
+  write(2, buf, sizeof(buf) - 1);
+  g_real_malloc = __libc_malloc;
+  g_real_free = __libc_free;
+  g_real_calloc = __libc_calloc;
+  g_real_realloc = __libc_realloc;
+  g_real_valloc = __libc_valloc;
+  g_real_memalign = __libc_memalign;
 
-  // char buff[100];
-  // int n = simple_snprintf(buff, 100, "malloc: %x, %x\n", &g_real_malloc, g_real_malloc);
-  // write(2, buff, n);
+  char buff[100];
+  int n = simple_snprintf(buff, 100, "malloc: %x, %x\n", &g_real_malloc, g_real_malloc);
+  write(2, buff, n);
 
-  // g_real_malloc = (alloc_func_t)dlsym(RTLD_NEXT, "malloc");
-  // g_real_free = (free_func_t)dlsym(RTLD_NEXT, "free");
-  // g_real_realloc = (realloc_func_t)dlsym(RTLD_NEXT, "realloc");
-  // g_real_calloc = (calloc_func_t)dlsym(RTLD_NEXT, "calloc");
-  // g_real_posix_memalign = (posix_memalign_func_t)dlsym(RTLD_NEXT, "posix_memalign");
-  // g_real_valloc = (alloc_func_t)dlsym(RTLD_NEXT, "valloc");
-  // g_real_memalign = (calloc_func_t)dlsym(RTLD_NEXT, "memalign");
+  g_real_malloc = (alloc_func_t)dlsym(RTLD_NEXT, "malloc");
+  g_real_free = (free_func_t)dlsym(RTLD_NEXT, "free");
+  g_real_realloc = (realloc_func_t)dlsym(RTLD_NEXT, "realloc");
+  g_real_calloc = (calloc_func_t)dlsym(RTLD_NEXT, "calloc");
+  g_real_posix_memalign = (posix_memalign_func_t)dlsym(RTLD_NEXT, "posix_memalign");
+  g_real_valloc = (alloc_func_t)dlsym(RTLD_NEXT, "valloc");
+  g_real_memalign = (calloc_func_t)dlsym(RTLD_NEXT, "memalign");
 
   guard_thread::create_and_run();
 }
@@ -183,4 +183,3 @@ __attribute__((visibility("default"))) void* valloc(size_t size) {
 }
 
 }
-
